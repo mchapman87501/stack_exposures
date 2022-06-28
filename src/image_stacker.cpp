@@ -25,8 +25,25 @@ void ImageStacker::push(const cv::Mat &new_image) {
 }
 
 cv::Mat ImageStacker::result() {
-  // TODO normalize and convert to BGR.
-  return m_image;
+  using namespace cv;
+  // normalize and convert to 8-bit unsigned.
+  Mat result;
+
+  // From https://stackoverflow.com/a/26409969/2826337
+  double min_val = 0.0;
+  double max_val = 0.0;
+  Mat one_channel = m_image.reshape(1);
+  minMaxIdx(one_channel, &min_val, &max_val);
+
+  const double dval = max_val - min_val;
+  const double alpha = (dval > 0.0) ? (255.0 / dval) : 1.0;
+  // Beta offset is applied after scaling by alpha, hence multiplication by
+  // alpha.
+  const double beta = -min_val * alpha;
+  m_image.convertTo(result, CV_8UC3, alpha, beta);
+  // No need for colorspace conversion.  Only data type conversion
+  // (scaling, offset) was needed.
+  return result;
 }
 
 } // namespace StackExposures
