@@ -5,6 +5,8 @@
 #include "aligned_image_generator.hpp"
 
 namespace {
+using namespace StackExposures;
+
 void check(int status, const std::string &msg) {
   using namespace std;
 
@@ -17,11 +19,8 @@ void check(int status, const std::string &msg) {
     throw new runtime_error(msg);
   }
 }
-} // namespace
 
-namespace StackExposures {
-ImageInfo::UniquePtr
-AlignedImageGenerator::align(const std::filesystem::path &image_path) {
+ImageInfo::UniquePtr load_image(const std::filesystem::path &image_path) {
   ImageInfo::UniquePtr result =
       std::make_unique<ImageInfo>(ImageInfo(image_path));
 
@@ -43,39 +42,16 @@ AlignedImageGenerator::align(const std::filesystem::path &image_path) {
   result->set_raw_image(img);
 
   return result;
-  // processed_image_wrapper logic goes here:
-  /*
-   * wrapped = processed_image_wrapper()
-   * wrapped.set_data(self, img)
-   * ndarr = wrapped.__array__()
-   * return ndarr
-   */
-  /*
-  cdef class processed_image_wrapper:
-  cdef RawPy raw
-  cdef libraw_processed_image_t* processed_image
+}
+} // namespace
 
-  cdef set_data(self, RawPy raw, libraw_processed_image_t* processed_image):
-      self.raw = raw
-      self.processed_image = processed_image
-
-  def __array__(self):
-      cdef np.npy_intp shape[3]
-      shape[0] = <np.npy_intp> self.processed_image.height
-      shape[1] = <np.npy_intp> self.processed_image.width
-      shape[2] = <np.npy_intp> self.processed_image.colors
-      cdef np.ndarray ndarr
-      ndarr = np.PyArray_SimpleNewFromData(3, shape,
-                                           np.NPY_UINT8 if
-  self.processed_image.bits == 8 else np.NPY_UINT16, self.processed_image.data)
-      ndarr.base = <PyObject*> self
-      # Python doesn't know about above assignment as it's in C-level
-      Py_INCREF(self)
-      return ndarr
-
-  def __dealloc__(self):
-      self.raw.p.dcraw_clear_mem(self.processed_image)
-
-  */
+namespace StackExposures {
+ImageInfo::UniquePtr
+AlignedImageGenerator::align(const std::filesystem::path &image_path) {
+  // XXX FIX THIS I should own the LibRaw instance.
+  ImageInfo::UniquePtr result = load_image(image_path);
+  // TODO Align the new image to the reference image if any;
+  // otherwise record the result as the reference image.
+  return result;
 }
 } // namespace StackExposures
