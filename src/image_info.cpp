@@ -1,6 +1,7 @@
 #include "image_info.hpp"
 
 #include <iostream>
+#include <opencv2/imgproc.hpp>
 
 namespace StackExposures {
 ImageInfo::ImageInfo(LibRawPtr processor, const std::filesystem::path &path,
@@ -11,12 +12,12 @@ ImageInfo::ImageInfo(LibRawPtr processor, const std::filesystem::path &path,
   int c = m_raw_img->colors;
 
   // m_image references new_value->data but doesn't take ownership.
-  m_image = cv::Mat(h, w, CV_8SC3, (void *)m_raw_img->data);
+  cv::Mat from_raw(h, w, CV_8UC3, (void *)m_raw_img->data);
+  cv::cvtColor(from_raw, m_image, cv::COLOR_RGB2BGR);
 }
 
 ImageInfo::~ImageInfo() {
   if (m_raw_img) {
-    std::cout << "~ImageInfo(): Deallocate raw image." << std::endl;
     m_processor->dcraw_clear_mem(m_raw_img);
     m_raw_img = nullptr;
   }
