@@ -23,5 +23,8 @@ public:
    */
 
   ImageInfo::UniquePtr align(const std::filesystem::path &image_path);
+
+protected:
+  ImageInfo::UniquePtr load_image(const std::filesystem::path &image_path);
 };
 } // namespace StackExposures

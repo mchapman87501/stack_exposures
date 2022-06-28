@@ -20,7 +20,20 @@ void check(int status, const std::string &msg) {
   }
 }
 
-ImageInfo::UniquePtr load_image(const std::filesystem::path &image_path) {
+} // namespace
+
+namespace StackExposures {
+ImageInfo::UniquePtr
+AlignedImageGenerator::align(const std::filesystem::path &image_path) {
+  // XXX FIX THIS I should own the LibRaw instance.
+  ImageInfo::UniquePtr result = load_image(image_path);
+  // TODO Align the new image to the reference image if any;
+  // otherwise record the result as the reference image.
+  return result;
+}
+
+ImageInfo::UniquePtr
+AlignedImageGenerator::load_image(const std::filesystem::path &image_path) {
   ImageInfo::UniquePtr result =
       std::make_unique<ImageInfo>(ImageInfo(image_path));
 
@@ -41,17 +54,6 @@ ImageInfo::UniquePtr load_image(const std::filesystem::path &image_path) {
 
   result->set_raw_image(img);
 
-  return result;
-}
-} // namespace
-
-namespace StackExposures {
-ImageInfo::UniquePtr
-AlignedImageGenerator::align(const std::filesystem::path &image_path) {
-  // XXX FIX THIS I should own the LibRaw instance.
-  ImageInfo::UniquePtr result = load_image(image_path);
-  // TODO Align the new image to the reference image if any;
-  // otherwise record the result as the reference image.
   return result;
 }
 } // namespace StackExposures
