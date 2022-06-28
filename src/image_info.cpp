@@ -3,13 +3,13 @@
 namespace StackExposures {
 ImageInfo::~ImageInfo() {
   if (m_raw_img) {
-    m_processor.dcraw_clear_mem(m_raw_img);
+    m_processor->dcraw_clear_mem(m_raw_img);
   }
 }
 
 void ImageInfo::set_raw_image(libraw_processed_image_t *new_value) {
   if (m_raw_img) {
-    m_processor.dcraw_clear_mem(m_raw_img);
+    m_processor->dcraw_clear_mem(m_raw_img);
   }
   m_raw_img = new_value;
 

@@ -23,31 +23,36 @@ void check(int status, const std::string &msg) {
 } // namespace
 
 namespace StackExposures {
-ImageInfo::UniquePtr
+AlignedImageGenerator::AlignedImageGenerator()
+    : m_processor(std::make_shared<LibRaw>()) {}
+
+ImageInfo::Ptr
 AlignedImageGenerator::align(const std::filesystem::path &image_path) {
-  // XXX FIX THIS I should own the LibRaw instance.
-  ImageInfo::UniquePtr result = load_image(image_path);
-  // TODO Align the new image to the reference image if any;
-  // otherwise record the result as the reference image.
+  ImageInfo::Ptr result = load_image(image_path);
+
+  if (!m_ref_img) {
+    m_ref_img = result;
+  } else {
+    result = align_internal(m_ref_img, result);
+  }
   return result;
 }
 
-ImageInfo::UniquePtr
+ImageInfo::Ptr
 AlignedImageGenerator::load_image(const std::filesystem::path &image_path) {
-  ImageInfo::UniquePtr result =
-      std::make_unique<ImageInfo>(ImageInfo(image_path));
+  ImageInfo::Ptr result =
+      std::make_shared<ImageInfo>(ImageInfo(m_processor, image_path));
 
-  LibRaw &processor(result->processor());
-
-  check(processor.open_file(image_path.c_str()), "Could not open file");
-  check(processor.unpack(), "Could not unpack");
-  check(processor.raw2image(), "raw2image");
-  check(processor.dcraw_process(), "dcraw_process"); // This is what Rawpy uses.
+  check(m_processor->open_file(image_path.c_str()), "Could not open file");
+  check(m_processor->unpack(), "Could not unpack");
+  check(m_processor->raw2image(), "raw2image");
+  check(m_processor->dcraw_process(),
+        "dcraw_process"); // This is what Rawpy uses.
 
   // To extract image data, rawpy uses
   // dcraw_make_mem_image().
   int status;
-  libraw_processed_image_t *img = processor.dcraw_make_mem_image(&status);
+  libraw_processed_image_t *img = m_processor->dcraw_make_mem_image(&status);
   check(status, "dcraw_make_mem_image");
   assert(img);
   assert(img->type == LIBRAW_IMAGE_BITMAP);
@@ -55,5 +60,10 @@ AlignedImageGenerator::load_image(const std::filesystem::path &image_path) {
   result->set_raw_image(img);
 
   return result;
+}
+
+ImageInfo::Ptr AlignedImageGenerator::align_internal(ImageInfo::Ptr ref,
+                                                     ImageInfo::Ptr unaligned) {
+  return unaligned;
 }
 } // namespace StackExposures

@@ -4,11 +4,14 @@
 #include <memory>
 
 #include "image_info.hpp"
+#include "shared_ptrs.hpp"
 
 namespace StackExposures {
 class AlignedImageGenerator {
 public:
   using UniquePtr = std::unique_ptr<AlignedImageGenerator>;
+
+  AlignedImageGenerator();
 
   /**
    * @brief Align an(other) image.
@@ -22,9 +25,15 @@ public:
    * @return ImageInfo for the aligned image.
    */
 
-  ImageInfo::UniquePtr align(const std::filesystem::path &image_path);
+  ImageInfo::Ptr align(const std::filesystem::path &image_path);
 
 protected:
-  ImageInfo::UniquePtr load_image(const std::filesystem::path &image_path);
+  LibRawPtr m_processor;
+
+  ImageInfo::Ptr m_ref_img = nullptr;
+
+  ImageInfo::Ptr load_image(const std::filesystem::path &image_path);
+  [[nodiscard]] ImageInfo::Ptr align_internal(ImageInfo::Ptr ref,
+                                              ImageInfo::Ptr unaligned);
 };
 } // namespace StackExposures
