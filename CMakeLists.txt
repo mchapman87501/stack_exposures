@@ -9,7 +9,11 @@ cmake_minimum_required(VERSION 3.23)
 find_package(OpenCV CONFIG REQUIRED PATHS)
 find_package(LibRaw REQUIRED)
 
-add_executable(stack_exposures src/main.cpp src/aligned_image_generator.cpp)
+add_executable(stack_exposures
+    src/main.cpp
+    src/aligned_image_generator.cpp
+    src/image_info.cpp)
+
 target_compile_features(stack_exposures PUBLIC cxx_std_20)
 target_include_directories(
     stack_exposures PUBLIC

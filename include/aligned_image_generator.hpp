@@ -1,16 +1,15 @@
 #pragma once
 
 #include <filesystem>
-#include <opencv2/core.hpp>
+#include <memory>
+
+#include "image_info.hpp"
 
 namespace StackExposures {
-struct ImageInfo {
-  std::filesystem::path m_path;
-  cv::Mat m_image;
-};
-
 class AlignedImageGenerator {
 public:
+  using UniquePtr = std::unique_ptr<AlignedImageGenerator>;
+
   /**
    * @brief Align an(other) image.
    *
@@ -23,6 +22,6 @@ public:
    * @return ImageInfo for the aligned image.
    */
 
-  ImageInfo align(const std::filesystem::path &image_path);
+  ImageInfo::UniquePtr align(const std::filesystem::path &image_path);
 };
 } // namespace StackExposures
