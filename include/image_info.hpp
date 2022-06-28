@@ -14,6 +14,10 @@ struct ImageInfo {
 
   std::filesystem::path m_path;
 
+  ImageInfo(const std::filesystem::path &path, cv::Mat &image)
+      : m_path(path), m_processor(nullptr), m_raw_img(nullptr), m_image(image) {
+  }
+
   ImageInfo(LibRawPtr processor, const std::filesystem::path &path,
             libraw_processed_image_t *raw_img);
 

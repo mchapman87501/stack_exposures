@@ -6,6 +6,7 @@
 #include <string>
 
 #include <opencv2/core/utility.hpp>
+#include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/video/tracking.hpp>
 
@@ -50,6 +51,15 @@ AlignedImageGenerator::align(const std::filesystem::path &image_path) {
 
 ImageInfo::Ptr
 AlignedImageGenerator::load_image(const std::filesystem::path &image_path) {
+  cv::Mat image = cv::imread(image_path.c_str());
+  if (image.data != nullptr) {
+    return std::make_shared<ImageInfo>(image_path, image);
+  }
+  return load_raw_image(image_path);
+}
+
+ImageInfo::Ptr
+AlignedImageGenerator::load_raw_image(const std::filesystem::path &image_path) {
   check(m_processor->open_file(image_path.c_str()), "Could not open file");
   check(m_processor->unpack(), "Could not unpack");
 
@@ -73,6 +83,15 @@ void AlignedImageGenerator::align_internal(ImageInfo::Ptr ref,
                                            ImageInfo::Ptr to_align) {
   // See
   // https://docs.opencv.org/4.6.0/dd/d93/samples_2cpp_2image_alignment_8cpp-example.html#a39
+
+  // Bail immediately if the two images have different sizes.
+  if ((ref->image().rows != to_align->image().rows) ||
+      (ref->image().cols != to_align->image().cols)) {
+    std::cerr << "Cannot align " << to_align->m_path << " to " << ref->m_path
+              << ": images have different dimensions." << std::endl;
+    return;
+  }
+
   using namespace cv;
   Mat ref_gray;
   cvtColor(ref->image(), ref_gray, COLOR_BGR2GRAY);
@@ -82,13 +101,20 @@ void AlignedImageGenerator::align_internal(ImageInfo::Ptr ref,
 
   const auto warp_mode = MOTION_TRANSLATION;
   const int num_iterations = 20000;
-  const double termination_eps = 1.0e-9;
+  const double termination_eps = 1.0e-6;
   Mat warp_matrix = Mat::eye(2, 3, CV_32F);
-  double correlation_val =
-      findTransformECC(ref_gray, to_align_gray, warp_matrix, warp_mode,
-                       TermCriteria(TermCriteria::COUNT + TermCriteria::EPS,
-                                    num_iterations, termination_eps));
 
+  try {
+    double correlation_val =
+        findTransformECC(ref_gray, to_align_gray, warp_matrix, warp_mode,
+                         TermCriteria(TermCriteria::COUNT + TermCriteria::EPS,
+                                      num_iterations, termination_eps));
+
+  } catch (cv::Exception &e) {
+    std::cerr << "Could not align " << to_align->m_path << " to " << ref->m_path
+              << ": " << e.what() << std::endl;
+    return;
+  }
   // Do the alignment.
   Mat warped_image =
       Mat(to_align->image().rows, to_align->image().cols, CV_32FC1);

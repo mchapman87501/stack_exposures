@@ -35,6 +35,7 @@ protected:
   void check(int status, const std::string &msg);
 
   ImageInfo::Ptr load_image(const std::filesystem::path &image_path);
+  ImageInfo::Ptr load_raw_image(const std::filesystem::path &image_path);
 
   /**
    * @brief Align an image to a reference image.

@@ -1,4 +1,5 @@
 #include "image_stacker.hpp"
+#include <iostream>
 
 namespace StackExposures {
 ImageStacker::ImageStacker() : m_width(0), m_height(0) {}
@@ -21,6 +22,12 @@ void ImageStacker::push(const cv::Mat &new_image) {
     cv::Mat sum(m_image);
     cv::add(m_image, new_image, sum, cv::noArray(), CV_64FC3);
     m_image = sum;
+  } else {
+    // Should this instead throw a runtime error?
+    std::cerr << "Cannot push image of size "
+              << "(w=" << w_new << ", h=" << h_new << ") onto a stack of size "
+              << "(w=" << m_width << ", h=" << m_height << ")" << std::endl
+              << "    New image ignored" << std::endl;
   }
 }
 
