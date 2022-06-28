@@ -2,12 +2,14 @@
 #include <iostream>
 
 #include "aligned_image_generator.hpp"
+#include "image_stacker.hpp"
 
 int main(int argc, char *argv[]) {
   using namespace std;
   using namespace StackExposures;
 
   AlignedImageGenerator aligner;
+  ImageStacker stacker;
 
   for (int i = 1; i < argc; ++i) {
     filesystem::path image_path(argv[i]);
@@ -18,7 +20,7 @@ int main(int argc, char *argv[]) {
     }
 
     auto result = aligner.align(image_path);
-    // TODO add image data to output image.
+    stacker.push(result->image());
   }
   return 0;
 }
