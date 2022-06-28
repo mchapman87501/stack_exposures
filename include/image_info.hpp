@@ -13,7 +13,6 @@ struct ImageInfo {
   using Ptr = std::shared_ptr<ImageInfo>;
 
   std::filesystem::path m_path;
-  cv::Mat m_image;
 
   ImageInfo(LibRawPtr processor, const std::filesystem::path &path)
       : m_processor(processor), m_path(path) {}
@@ -22,8 +21,12 @@ struct ImageInfo {
 
   void set_raw_image(libraw_processed_image_t *new_value);
 
+  cv::Mat &image() { return m_image; }
+  void update_image(cv::Mat &new_value) { m_image = new_value; }
+
 private:
   LibRawPtr m_processor;
   libraw_processed_image_t *m_raw_img;
+  cv::Mat m_image;
 };
 } // namespace StackExposures

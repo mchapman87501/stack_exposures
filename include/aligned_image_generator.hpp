@@ -33,7 +33,14 @@ protected:
   ImageInfo::Ptr m_ref_img = nullptr;
 
   ImageInfo::Ptr load_image(const std::filesystem::path &image_path);
-  [[nodiscard]] ImageInfo::Ptr align_internal(ImageInfo::Ptr ref,
-                                              ImageInfo::Ptr unaligned);
+
+  /**
+   * @brief Align an image to a reference image.
+   *
+   * @param ref Image with which to align
+   * @param to_align Image to align.  On return, to_align will be aligned to
+   * ref.
+   */
+  void align_internal(ImageInfo::Ptr ref, ImageInfo::Ptr to_align);
 };
 } // namespace StackExposures
