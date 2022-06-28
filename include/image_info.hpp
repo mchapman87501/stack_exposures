@@ -14,12 +14,10 @@ struct ImageInfo {
 
   std::filesystem::path m_path;
 
-  ImageInfo(LibRawPtr processor, const std::filesystem::path &path)
-      : m_processor(processor), m_path(path) {}
+  ImageInfo(LibRawPtr processor, const std::filesystem::path &path,
+            libraw_processed_image_t *raw_img);
 
   ~ImageInfo();
-
-  void set_raw_image(libraw_processed_image_t *new_value);
 
   cv::Mat &image() { return m_image; }
   void update_image(cv::Mat &new_value) { m_image = new_value; }

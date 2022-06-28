@@ -1,5 +1,6 @@
 #include "aligned_image_generator.hpp"
 
+#include <iostream>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -11,24 +12,29 @@
 namespace {
 using namespace StackExposures;
 
-void check(int status, const std::string &msg) {
-  using namespace std;
-
-  if (LIBRAW_FATAL_ERROR(status)) {
-    ostringstream outs;
-    outs << "Fatal error: " << msg;
-    throw new runtime_error(outs.str());
-  }
-  if (LIBRAW_SUCCESS != status) {
-    throw new runtime_error(msg);
-  }
-}
-
 } // namespace
 
 namespace StackExposures {
 AlignedImageGenerator::AlignedImageGenerator()
     : m_processor(std::make_shared<LibRaw>()) {}
+
+void AlignedImageGenerator::check(int status, const std::string &msg) {
+  using namespace std;
+
+  if (LIBRAW_FATAL_ERROR(status)) {
+    ostringstream outs;
+    outs << "Fatal error: " << msg << "; status = " << status << " ("
+         << m_processor->strerror(status) << ")";
+    cerr << outs.str() << endl;
+    throw new runtime_error(outs.str());
+  }
+  if (LIBRAW_SUCCESS != status) {
+    const char *status_msg =
+        (status < 0) ? m_processor->strerror(status) : std::strerror(status);
+    cerr << msg << "; status = " << status << " (" << status_msg << ")" << endl;
+    throw new runtime_error(msg);
+  }
+}
 
 ImageInfo::Ptr
 AlignedImageGenerator::align(const std::filesystem::path &image_path) {
@@ -44,25 +50,22 @@ AlignedImageGenerator::align(const std::filesystem::path &image_path) {
 
 ImageInfo::Ptr
 AlignedImageGenerator::load_image(const std::filesystem::path &image_path) {
-  ImageInfo::Ptr result =
-      std::make_shared<ImageInfo>(ImageInfo(m_processor, image_path));
-
   check(m_processor->open_file(image_path.c_str()), "Could not open file");
   check(m_processor->unpack(), "Could not unpack");
-  check(m_processor->raw2image(), "raw2image");
+
   check(m_processor->dcraw_process(),
         "dcraw_process"); // This is what Rawpy uses.
 
   // To extract image data, rawpy uses
   // dcraw_make_mem_image().
-  int status;
+  int status = 0;
   libraw_processed_image_t *img = m_processor->dcraw_make_mem_image(&status);
   check(status, "dcraw_make_mem_image");
   assert(img);
   assert(img->type == LIBRAW_IMAGE_BITMAP);
 
-  result->set_raw_image(img);
-
+  ImageInfo::Ptr result =
+      std::make_shared<ImageInfo>(m_processor, image_path, img);
   return result;
 }
 

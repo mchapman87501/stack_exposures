@@ -32,6 +32,8 @@ protected:
 
   ImageInfo::Ptr m_ref_img = nullptr;
 
+  void check(int status, const std::string &msg);
+
   ImageInfo::Ptr load_image(const std::filesystem::path &image_path);
 
   /**
