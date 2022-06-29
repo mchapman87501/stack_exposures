@@ -11,6 +11,7 @@ find_package(LibRaw REQUIRED)
 
 add_executable(stack_exposures
     src/main.cpp
+    src/image_loader.cpp
     src/aligned_image_generator.cpp
     src/image_info.cpp
     src/image_stacker.cpp)

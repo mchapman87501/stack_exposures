@@ -9,33 +9,22 @@
 namespace StackExposures {
 class AlignedImageGenerator {
 public:
-  using UniquePtr = std::unique_ptr<AlignedImageGenerator>;
+  using Ptr = std::shared_ptr<AlignedImageGenerator>;
 
   AlignedImageGenerator();
 
   /**
-   * @brief Align an(other) image.
+   * @brief Align an image to all other images aligned so far.
    *
-   * Aligns the image at 'image_path' with all images aligned so far.
-   * If no images have been aligned, this becomes the reference image
-   * against which all subsequent calls to 'align' will align.
-   *
-   * @param[in] image_path the path to the image (including raw) to align
-   *
-   * @return ImageInfo for the aligned image.
+   * @param image The image to align.
+   *              If this is the first image aligned, it becomes the reference
+   *              image against which all others are aligned.
+   * @return ImageInfo::Ptr the aligned image
    */
+  ImageInfo::Ptr align(ImageInfo::Ptr image);
 
-  ImageInfo::Ptr align(const std::filesystem::path &image_path);
-
-protected:
-  LibRawPtr m_processor;
-
+private:
   ImageInfo::Ptr m_ref_img = nullptr;
-
-  void check(int status, const std::string &msg);
-
-  ImageInfo::Ptr load_image(const std::filesystem::path &image_path);
-  ImageInfo::Ptr load_raw_image(const std::filesystem::path &image_path);
 
   /**
    * @brief Align an image to a reference image.

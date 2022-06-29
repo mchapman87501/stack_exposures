@@ -4,12 +4,14 @@
 #include <opencv2/imgcodecs.hpp>
 
 #include "aligned_image_generator.hpp"
+#include "image_loader.hpp"
 #include "image_stacker.hpp"
 
 int main(int argc, char *argv[]) {
   using namespace std;
   using namespace StackExposures;
 
+  ImageLoader loader;
   AlignedImageGenerator aligner;
   ImageStacker stacker;
 
@@ -21,8 +23,9 @@ int main(int argc, char *argv[]) {
     if (i == 1) {
     }
 
-    auto result = aligner.align(image_path);
-    stacker.push(result->image());
+    auto img_info = loader.load_image(image_path);
+    auto aligned = aligner.align(img_info);
+    stacker.push(aligned->image());
   }
 
   // What should be the name of the output image?
