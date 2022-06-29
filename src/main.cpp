@@ -15,11 +15,12 @@ namespace {
 
     struct Options {
         string m_invoked_as;
+        bool m_align;
         filesystem::path m_outpath;
         vector<filesystem::path> m_input_images;
 
         Options(int argc, char *argv[]):
-            m_outpath(default_outpath) {
+            m_align(true), m_outpath(default_outpath) {
 
             m_invoked_as = string(argv[0]);
             int i = 1;
@@ -29,6 +30,8 @@ namespace {
                     i++;
                     m_outpath = filesystem::path(argv[i]);
                 // TODO handle "--output", "--output="
+                } else if (curr == "--no-align") {
+                    m_align = false;
                 } else if ((curr == "-h") || (curr == "--help")) {
                     show_help();
                 } else if (curr.front() == '-') {
@@ -63,12 +66,13 @@ private:
         void show_help(ostream& outs = cout, int exit_code = 0) {
             // O for std::format
             ostringstream op_outs;
-            op_outs << "Save result to <path>; default " << default_outpath;
+            op_outs << "Save result to <path>; default " << default_outpath << ".";
             const string output_path_help(op_outs.str());
 
-            outs << "Usage: " << m_invoked_as << " [-o path] [-h|--help] image_filaname [image_filename...]" << endl
+            outs << "Usage: " << m_invoked_as << " [-o path] [--no-align] [-h|--help] image_filaname [image_filename...]" << endl
             << "Options:" << endl
             << padded_arg_help("  -o <path>", output_path_help) << endl
+            << padded_arg_help("  --no-align", "Do not align images before stacking.") << endl
             << padded_arg_help("  -h, --help", "Show this help message and exit.") << endl
             << "Arguments:" << endl
             << padded_arg_help("  <image_filename>", "path of an image to stack") << endl;
@@ -103,7 +107,8 @@ int main(int argc, char *argv[]) {
 
     // TODO support concurrent loading/alignment/stacking.
     auto img_info = loader.load_image(image_path);
-    auto aligned = aligner.align(img_info);
+
+    auto aligned = opts.m_align ? aligner.align(img_info) : img_info;
     stacker.push(aligned->image());
 
     is_first = false;
