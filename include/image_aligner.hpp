@@ -7,11 +7,11 @@
 #include "shared_ptrs.hpp"
 
 namespace StackExposures {
-class AlignedImageGenerator {
+class ImageAligner {
 public:
-  using Ptr = std::shared_ptr<AlignedImageGenerator>;
+  using Ptr = std::shared_ptr<ImageAligner>;
 
-  AlignedImageGenerator();
+  ImageAligner();
 
   /**
    * @brief Align an image to all other images aligned so far.

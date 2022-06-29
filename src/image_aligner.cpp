@@ -1,4 +1,4 @@
-#include "aligned_image_generator.hpp"
+#include "image_aligner.hpp"
 
 #include <iostream>
 #include <sstream>
@@ -15,9 +15,9 @@ using namespace StackExposures;
 } // namespace
 
 namespace StackExposures {
-AlignedImageGenerator::AlignedImageGenerator() {}
+ImageAligner::ImageAligner() {}
 
-ImageInfo::Ptr AlignedImageGenerator::align(ImageInfo::Ptr image) {
+ImageInfo::Ptr ImageAligner::align(ImageInfo::Ptr image) {
   ImageInfo::Ptr result = image;
 
   if (!m_ref_img) {
@@ -28,8 +28,7 @@ ImageInfo::Ptr AlignedImageGenerator::align(ImageInfo::Ptr image) {
   return result;
 }
 
-void AlignedImageGenerator::align_internal(ImageInfo::Ptr ref,
-                                           ImageInfo::Ptr to_align) {
+void ImageAligner::align_internal(ImageInfo::Ptr ref, ImageInfo::Ptr to_align) {
   // See
   // https://docs.opencv.org/4.6.0/dd/d93/samples_2cpp_2image_alignment_8cpp-example.html#a39
 

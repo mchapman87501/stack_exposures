@@ -3,7 +3,7 @@
 
 #include <opencv2/imgcodecs.hpp>
 
-#include "aligned_image_generator.hpp"
+#include "image_aligner.hpp"
 #include "image_loader.hpp"
 #include "image_stacker.hpp"
 
@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
   using namespace StackExposures;
 
   ImageLoader loader;
-  AlignedImageGenerator aligner;
+  ImageAligner aligner;
   ImageStacker stacker;
 
   for (int i = 1; i < argc; ++i) {
