@@ -1,6 +1,6 @@
 #pragma once
 
-#include "libraw.h"
+#include "libraw/libraw.h"
 #include <memory>
 
 namespace StackExposures {

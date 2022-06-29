@@ -4,7 +4,7 @@
 
 #import "image_info.hpp"
 
-#include "libraw.h"
+#include "libraw/libraw.h"
 
 namespace StackExposures {
 class ImageLoader {
