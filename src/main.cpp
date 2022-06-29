@@ -47,7 +47,7 @@ namespace {
         }
 
 private:
-        string padded_right(const string& s, size_t width = 20) {
+        string padded_right(const string& s, size_t width) {
             if (width <= s.size()) {
                 return s;
             }
@@ -63,15 +63,15 @@ private:
         void show_help(ostream& outs = cout, int exit_code = 0) {
             // O for std::format
             ostringstream op_outs;
-            op_outs << "where to write output; defaults to " << default_outpath;
+            op_outs << "Save result to <path>; default " << default_outpath;
             const string output_path_help(op_outs.str());
 
-            outs << "Usage: " << m_invoked_as << " [-o output_path] [-h|--help] image_filaname [image_filename...]" << endl
+            outs << "Usage: " << m_invoked_as << " [-o path] [-h|--help] image_filaname [image_filename...]" << endl
             << "Options:" << endl
+            << padded_arg_help("  -o <path>", output_path_help) << endl
             << padded_arg_help("  -h, --help", "Show this help message and exit.") << endl
             << "Arguments:" << endl
-            << padded_arg_help("  output_path", output_path_help) << endl
-            << padded_arg_help("  image_filename", "path of an image to stack") << endl;
+            << padded_arg_help("  <image_filename>", "path of an image to stack") << endl;
             std::exit(exit_code);
         }
 
