@@ -12,7 +12,7 @@ struct ImageInfo {
   using UniquePtr = std::unique_ptr<ImageInfo>;
   using Ptr = std::shared_ptr<ImageInfo>;
 
-  std::filesystem::path m_path;
+  const std::filesystem::path m_path;
 
   ImageInfo(const std::filesystem::path &path, cv::Mat &image)
       : m_path(path), m_processor(nullptr), m_raw_img(nullptr), m_image(image) {

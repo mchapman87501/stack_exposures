@@ -4,7 +4,7 @@
 
 #include <deque>
 #include <future>
-#include <thread>
+#include <semaphore>
 
 #include <opencv2/imgcodecs.hpp>
 
@@ -109,16 +109,18 @@ int main(int argc, char *argv[]) {
 
   using ImageInfoFuture = shared_future<ImageInfo::Ptr>;
 
+  counting_semaphore gate(4);
   deque<ImageInfoFuture> load_tasks;
   // TODO use a thread pool instead of launching all background loads at once.
   for (const auto image_path : opts.m_input_images) {
     ImageLoader loader;
     // Support concurrent loading/alignment/stacking, while
     // respecting stacking order.
-    auto load_async = [image_path]() {
+    auto load_async = [&gate, image_path]() {
       ImageLoader loader;
+      gate.acquire();
       auto result = loader.load_image(image_path);
-      cout << image_path << endl << flush;
+      gate.release();
       return result;
     };
     load_tasks.push_back(async(launch::async, load_async));
@@ -130,6 +132,7 @@ int main(int argc, char *argv[]) {
     load_tasks.pop_front();
     auto img_info = fut.get();
 
+    cout << img_info->m_path << endl << flush;
     // TODO get the icc profile from the first image.
     if (is_first) {
     }
