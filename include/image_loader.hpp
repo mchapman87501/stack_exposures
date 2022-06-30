@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#import "image_info.hpp"
+#include "image_info.hpp"
 
 #include "libraw.h"
 

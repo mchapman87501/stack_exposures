@@ -1,0 +1,3 @@
+[submodule "extern/LibRaw-cmake"]
+	path = extern/LibRaw-cmake
+	url = https://github.com/LibRaw/LibRaw-cmake.git

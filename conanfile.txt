@@ -1,7 +1,0 @@
-[requires]
-opencv/4.5.5
-libraw/0.20.2
-
-[generators]
-cmake
-
