@@ -141,7 +141,6 @@ int main(int argc, char *argv[]) {
     is_first = false;
   }
 
-  // What should be the name of the output image?
   cout << "Saving result to " << opts.m_outpath << endl;
   cv::imwrite(opts.m_outpath.c_str(), stacker.result());
   return 0;
