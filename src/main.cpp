@@ -104,18 +104,13 @@ int main(int argc, char *argv[]) {
 
   Options opts(argc, argv);
 
-  ImageAligner aligner;
-  ImageStacker stacker;
-
   using ImageInfoFuture = shared_future<ImageInfo::Ptr>;
 
-  counting_semaphore gate(4);
+  constexpr size_t max_concurrent_loads = 4;
+  counting_semaphore gate(max_concurrent_loads);
   deque<ImageInfoFuture> load_tasks;
-  // TODO use a thread pool instead of launching all background loads at once.
   for (const auto image_path : opts.m_input_images) {
     ImageLoader loader;
-    // Support concurrent loading/alignment/stacking, while
-    // respecting stacking order.
     auto load_async = [&gate, image_path]() {
       ImageLoader loader;
       gate.acquire();
@@ -125,6 +120,9 @@ int main(int argc, char *argv[]) {
     };
     load_tasks.push_back(async(launch::async, load_async));
   }
+
+  ImageAligner aligner;
+  ImageStacker stacker;
 
   bool is_first = true;
   while (!load_tasks.empty()) {
