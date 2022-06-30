@@ -3,7 +3,7 @@
 #include <filesystem>
 #include <memory>
 
-#include "libraw/libraw.h"
+#include "libraw.h"
 #include "shared_ptrs.hpp"
 #include <opencv2/core.hpp>
 

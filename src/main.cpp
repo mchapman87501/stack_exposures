@@ -11,7 +11,7 @@
 namespace {
     using namespace std;
 
-    filesystem::path default_outpath("stacked.png");
+    filesystem::path default_outpath("stacked.tiff");
 
     struct Options {
         string m_invoked_as;
@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
 
   bool is_first = true;
   for (const auto image_path: opts.m_input_images) {
-    cout << "Processing " << image_path << endl;
+    cout << image_path << endl;
 
     // TODO get the icc profile from the first image.
     if (is_first) {
