@@ -17,6 +17,10 @@ ImageInfo::ImageInfo(LibRawPtr processor, const std::filesystem::path &path,
   cv::cvtColor(from_raw, m_image, cv::COLOR_RGB2BGR);
 }
 
+ImageInfo::ImageInfo(const ImageInfo &src, cv::Mat &image)
+    : m_path(src.m_path), m_processor(src.m_processor),
+      m_raw_img(src.m_raw_img), m_image(image) {}
+
 ImageInfo::~ImageInfo() {
   if (m_raw_img) {
     m_processor->dcraw_clear_mem(m_raw_img.get());

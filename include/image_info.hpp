@@ -19,13 +19,10 @@ struct ImageInfo {
   ImageInfo(LibRawPtr processor, const std::filesystem::path &path,
             libraw_processed_image_t *raw_img);
 
-  ImageInfo::Ptr with_cv_img(cv::Mat &new_cv_img) {
-    return std::make_shared<ImageInfo>(*this, new_cv_img);
-  }
-
-  ImageInfo(const ImageInfo &src, cv::Mat &new_cv_img)
-      : m_path(src.m_path), m_processor(src.m_processor),
-        m_raw_img(src.m_raw_img), m_image(new_cv_img) {}
+  /**
+   * @brief Construct from src, but with the given OpenCV image.
+   */
+  ImageInfo(const ImageInfo &src, cv::Mat &image);
 
   ~ImageInfo();
 

@@ -65,6 +65,6 @@ ImageInfo::Ptr ImageAligner::align_internal(ImageInfo::Ptr ref,
   warpAffine(to_align->image(), warped_image, warp_matrix, warped_image.size(),
              INTER_LINEAR + WARP_INVERSE_MAP);
 
-  return to_align->with_cv_img(warped_image);
+  return std::make_shared<ImageInfo>(*to_align, warped_image);
 }
 } // namespace StackExposures
