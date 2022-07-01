@@ -50,4 +50,5 @@ target_link_libraries(test_image_loader PRIVATE Catch2::Catch2WithMain ${OpenCV_
 
 include(CTest)
 include(Catch)
+catch_discover_tests(test_image_info)
 catch_discover_tests(test_image_loader)

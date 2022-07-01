@@ -16,10 +16,3 @@ namespace {
 TEST_CASE("Load non-raw image") {
 	REQUIRE_THROWS_AS(load_non_existent(), std::runtime_error);
 }
-
-TEST_CASE("Low-level load non-existent image") {
-	auto processor = std::make_shared<LibRaw>();
-	auto status = processor->open_file("/no/such/image/jpg");
-	CHECK(status < 0);
-	CHECK(std::string(processor->strerror(status)) == std::string("Input/output error"));
-}
