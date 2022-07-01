@@ -4,9 +4,16 @@
 #include <opencv2/imgproc.hpp>
 
 namespace StackExposures {
+
+  ImageInfo::ImageInfo(const std::filesystem::path &path, cv::Mat &image)
+      : m_path(path), m_raw_img(nullptr), m_image(image) {
+  }
+
 ImageInfo::ImageInfo(LibRawPtr processor, const std::filesystem::path &path,
                      libraw_processed_image_t *raw_img)
-    : m_processor(processor), m_path(path), m_raw_img(raw_img) {
+    : m_path(path), 
+    m_raw_img(LibRawProcessedImagePtr(raw_img, [processor](auto p) { processor->dcraw_clear_mem(p);}))
+{
   int h = m_raw_img->height;
   int w = m_raw_img->width;
   int c = m_raw_img->colors;
@@ -18,18 +25,15 @@ ImageInfo::ImageInfo(LibRawPtr processor, const std::filesystem::path &path,
 }
 
 ImageInfo::ImageInfo(const ImageInfo &src, cv::Mat &image)
-    : m_path(src.m_path), m_processor(src.m_processor),
+    : m_path(src.m_path),
       m_raw_img(src.m_raw_img), m_image(image) {}
 
 ImageInfo::~ImageInfo() {
-  if (m_raw_img) {
-    m_processor->dcraw_clear_mem(m_raw_img.get());
-  }
 }
 
 const std::filesystem::path &ImageInfo::path() const { return m_path; }
 
-cv::Mat &ImageInfo::image() { return m_image; }
+const cv::Mat &ImageInfo::image() const { return m_image; }
 
 bool ImageInfo::same_extents(ImageInfo::Ptr other_info) const {
   const cv::Mat &other(other_info->image());

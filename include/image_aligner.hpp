@@ -19,8 +19,8 @@ public:
    * @param image The image to align.
    *              If this is the first image aligned, it becomes the reference
    *              image against which all others are aligned.
-   * @return ImageInfo::Ptr the aligned image, or in case of processing problems,
-   *                        the original image
+   * @return ImageInfo::Ptr the aligned image, or in case of processing
+   * problems, the original image
    */
   ImageInfo::Ptr align(ImageInfo::Ptr image);
 
