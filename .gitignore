@@ -1,3 +1,4 @@
 /build
 /build_artifacts
 /.vscode
+.DS_Store

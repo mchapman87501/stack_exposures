@@ -15,13 +15,13 @@ void ImageLoader::check(int status, const std::string &msg) {
     outs << "Fatal error: " << msg << "; status = " << status << " ("
          << m_processor->strerror(status) << ")";
     cerr << outs.str() << endl;
-    throw new runtime_error(outs.str());
+    throw runtime_error(outs.str());
   }
   if (LIBRAW_SUCCESS != status) {
     const char *status_msg =
         (status < 0) ? m_processor->strerror(status) : std::strerror(status);
     cerr << msg << "; status = " << status << " (" << status_msg << ")" << endl;
-    throw new runtime_error(msg);
+    throw runtime_error(msg);
   }
 }
 
@@ -37,6 +37,7 @@ ImageLoader::load_image(const std::filesystem::path &image_path) {
 ImageInfo::Ptr
 ImageLoader::load_raw_image(const std::filesystem::path &image_path) {
   check(m_processor->open_file(image_path.c_str()), "Could not open file");
+
   check(m_processor->unpack(), "Could not unpack");
 
   check(m_processor->dcraw_process(),
@@ -50,6 +51,7 @@ ImageLoader::load_raw_image(const std::filesystem::path &image_path) {
   assert(img);
   assert(img->type == LIBRAW_IMAGE_BITMAP);
 
+  std::cout << "load_raw_image: Creating result image for " << image_path << std::endl;
   ImageInfo::Ptr result =
       std::make_shared<ImageInfo>(m_processor, image_path, img);
   return result;
