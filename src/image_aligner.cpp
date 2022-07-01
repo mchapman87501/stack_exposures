@@ -18,27 +18,29 @@ namespace StackExposures {
 ImageAligner::ImageAligner() {}
 
 ImageInfo::Ptr ImageAligner::align(ImageInfo::Ptr image) {
-  ImageInfo::Ptr result = image;
-
   if (!m_ref_img) {
-    m_ref_img = result;
+    m_ref_img = image;
   } else {
-    align_internal(m_ref_img, result);
+    if (!m_ref_img->same_extents(image)) {
+      std::cerr << "Cannot align " << image->path() << " to "
+                << m_ref_img->path() << ": images have different dimensions."
+                << std::endl;
+    } else {
+      try {
+        return align_internal(m_ref_img, image);
+      } catch (cv::Exception &e) {
+        std::cerr << "Could not align " << image->path() << " to "
+                  << m_ref_img->path() << ": " << e.what() << std::endl;
+      }
+    }
   }
-  return result;
+  return image;
 }
 
-void ImageAligner::align_internal(ImageInfo::Ptr ref, ImageInfo::Ptr to_align) {
+ImageInfo::Ptr ImageAligner::align_internal(ImageInfo::Ptr ref,
+                                            ImageInfo::Ptr to_align) {
   // See
   // https://docs.opencv.org/4.6.0/dd/d93/samples_2cpp_2image_alignment_8cpp-example.html#a39
-
-  // Bail immediately if the two images have different sizes.
-  if ((ref->image().rows != to_align->image().rows) ||
-      (ref->image().cols != to_align->image().cols)) {
-    std::cerr << "Cannot align " << to_align->path() << " to " << ref->path()
-              << ": images have different dimensions." << std::endl;
-    return;
-  }
 
   using namespace cv;
   Mat ref_gray;
@@ -52,22 +54,17 @@ void ImageAligner::align_internal(ImageInfo::Ptr ref, ImageInfo::Ptr to_align) {
   const double termination_eps = 1.0e-6;
   Mat warp_matrix = Mat::eye(2, 3, CV_32F);
 
-  try {
-    double correlation_val =
-        findTransformECC(ref_gray, to_align_gray, warp_matrix, warp_mode,
-                         TermCriteria(TermCriteria::COUNT + TermCriteria::EPS,
-                                      num_iterations, termination_eps));
+  double correlation_val =
+      findTransformECC(ref_gray, to_align_gray, warp_matrix, warp_mode,
+                       TermCriteria(TermCriteria::COUNT + TermCriteria::EPS,
+                                    num_iterations, termination_eps));
 
-  } catch (cv::Exception &e) {
-    std::cerr << "Could not align " << to_align->path() << " to " << ref->path()
-              << ": " << e.what() << std::endl;
-    return;
-  }
   // Do the alignment.
   Mat warped_image =
       Mat(to_align->image().rows, to_align->image().cols, CV_32FC1);
   warpAffine(to_align->image(), warped_image, warp_matrix, warped_image.size(),
              INTER_LINEAR + WARP_INVERSE_MAP);
-  to_align->update_image(warped_image);
+
+  return to_align->with_cv_img(warped_image);
 }
 } // namespace StackExposures

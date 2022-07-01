@@ -12,14 +12,28 @@ ImageInfo::ImageInfo(LibRawPtr processor, const std::filesystem::path &path,
   int c = m_raw_img->colors;
 
   // m_image references new_value->data but doesn't take ownership.
+  // ImageInfo stores m_raw_img -- memory management.
   cv::Mat from_raw(h, w, CV_8UC3, (void *)m_raw_img->data);
   cv::cvtColor(from_raw, m_image, cv::COLOR_RGB2BGR);
 }
 
 ImageInfo::~ImageInfo() {
   if (m_raw_img) {
-    m_processor->dcraw_clear_mem(m_raw_img);
-    m_raw_img = nullptr;
+    m_processor->dcraw_clear_mem(m_raw_img.get());
   }
 }
+
+const std::filesystem::path &ImageInfo::path() const { return m_path; }
+
+cv::Mat &ImageInfo::image() { return m_image; }
+
+bool ImageInfo::same_extents(ImageInfo::Ptr other_info) const {
+  const cv::Mat &other(other_info->image());
+  return ((m_image.rows == other.rows) && (m_image.cols == other.cols));
+}
+
+size_t ImageInfo::rows() const { return m_image.rows; }
+
+size_t ImageInfo::cols() const { return m_image.cols; }
+
 } // namespace StackExposures

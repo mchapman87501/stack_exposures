@@ -141,15 +141,15 @@ int main(int argc, char *argv[]) {
     } else {
 
       if (!ref_img->same_extents(img_info)) {
-        cerr << "Cannot process " << img_info->path() << ": image width x height ("
-        << img_info->cols() << " x " << img_info->rows() << ") do not match first image ("
-        << ref_img->cols() << " x " << ref_img->rows() << ")" << endl;
+        cerr << "Cannot process " << img_info->path()
+             << ": image width x height (" << img_info->cols() << " x "
+             << img_info->rows() << ") do not match first image ("
+             << ref_img->cols() << " x " << ref_img->rows() << ")" << endl;
       } else {
         auto aligned = aligner.align(img_info);
         stacker.push(aligned->image());
       }
     }
-
   }
 
   cout << "Saving result to " << opts.m_outpath << endl;

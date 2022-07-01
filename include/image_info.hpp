@@ -19,24 +19,28 @@ struct ImageInfo {
   ImageInfo(LibRawPtr processor, const std::filesystem::path &path,
             libraw_processed_image_t *raw_img);
 
+  ImageInfo::Ptr with_cv_img(cv::Mat &new_cv_img) {
+    return std::make_shared<ImageInfo>(*this, new_cv_img);
+  }
+
+  ImageInfo(const ImageInfo &src, cv::Mat &new_cv_img)
+      : m_path(src.m_path), m_processor(src.m_processor),
+        m_raw_img(src.m_raw_img), m_image(new_cv_img) {}
+
   ~ImageInfo();
 
-  const std::filesystem::path& path() const { return m_path; }
-  cv::Mat &image() { return m_image; }
+  const std::filesystem::path &path() const;
 
-  bool same_extents(ImageInfo::Ptr other_info) const {
-    const cv::Mat &other(other_info->image());
-    return ((m_image.rows == other.rows) && (m_image.cols == other.cols));
-  }
-  size_t rows() const { return m_image.rows; }
-  size_t cols() const { return m_image.cols; }
+  bool same_extents(ImageInfo::Ptr other_info) const;
+  size_t rows() const;
+  size_t cols() const;
 
-  void update_image(cv::Mat &new_value) { m_image = new_value; }
+  cv::Mat &image();
 
 private:
   const std::filesystem::path m_path;
   LibRawPtr m_processor;
-  libraw_processed_image_t *m_raw_img;
+  LibRawProcessedImagePtr m_raw_img;
   cv::Mat m_image;
 };
 } // namespace StackExposures
