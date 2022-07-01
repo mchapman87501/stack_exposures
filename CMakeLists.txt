@@ -28,6 +28,7 @@ target_link_libraries(stack_exposures PRIVATE ${OpenCV_LIBS} ${LibRaw_LIBRARIES}
 
 
 find_package(Catch2 3 REQUIRED)
+enable_testing()
 include(CTest)
 include(Catch)
 add_subdirectory(tests)
