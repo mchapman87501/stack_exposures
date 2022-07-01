@@ -125,20 +125,31 @@ int main(int argc, char *argv[]) {
   ImageStacker stacker;
 
   bool is_first = true;
+  ImageInfo::Ptr ref_img(nullptr);
+
   while (!load_tasks.empty()) {
     auto fut = load_tasks.front();
     load_tasks.pop_front();
     auto img_info = fut.get();
+    cout << img_info->path() << endl << flush;
 
-    cout << img_info->m_path << endl << flush;
-    // TODO get the icc profile from the first image.
     if (is_first) {
+      // TODO get the icc profile from the first image.
+      ref_img = img_info;
+      stacker.push(img_info->image());
+      is_first = false;
+    } else {
+
+      if (!ref_img->same_extents(img_info)) {
+        cerr << "Cannot process " << img_info->path() << ": image width x height ("
+        << img_info->cols() << " x " << img_info->rows() << ") do not match first image ("
+        << ref_img->cols() << " x " << ref_img->rows() << ")" << endl;
+      } else {
+        auto aligned = aligner.align(img_info);
+        stacker.push(aligned->image());
+      }
     }
 
-    auto aligned = opts.m_align ? aligner.align(img_info) : img_info;
-    stacker.push(aligned->image());
-
-    is_first = false;
   }
 
   cout << "Saving result to " << opts.m_outpath << endl;

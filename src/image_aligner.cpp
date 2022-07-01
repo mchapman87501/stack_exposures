@@ -35,7 +35,7 @@ void ImageAligner::align_internal(ImageInfo::Ptr ref, ImageInfo::Ptr to_align) {
   // Bail immediately if the two images have different sizes.
   if ((ref->image().rows != to_align->image().rows) ||
       (ref->image().cols != to_align->image().cols)) {
-    std::cerr << "Cannot align " << to_align->m_path << " to " << ref->m_path
+    std::cerr << "Cannot align " << to_align->path() << " to " << ref->path()
               << ": images have different dimensions." << std::endl;
     return;
   }
@@ -59,7 +59,7 @@ void ImageAligner::align_internal(ImageInfo::Ptr ref, ImageInfo::Ptr to_align) {
                                       num_iterations, termination_eps));
 
   } catch (cv::Exception &e) {
-    std::cerr << "Could not align " << to_align->m_path << " to " << ref->m_path
+    std::cerr << "Could not align " << to_align->path() << " to " << ref->path()
               << ": " << e.what() << std::endl;
     return;
   }

@@ -24,10 +24,9 @@ void ImageStacker::push(const cv::Mat &new_image) {
     m_image = sum;
   } else {
     // Should this instead throw a runtime error?
-    std::cerr << "Cannot push image of size "
-              << "(w=" << w_new << ", h=" << h_new << ") onto a stack of size "
-              << "(w=" << m_width << ", h=" << m_height << ")" << std::endl
-              << "    New image ignored" << std::endl;
+    std::cerr << "Cannot push image of (width x height) "
+              << "(" << w_new << " x " << h_new << ") onto a stack of size "
+              << "(" << m_width << " x " << m_height << ")." << std::endl;
   }
 }
 
