@@ -31,7 +31,6 @@ struct ImageInfo {
 
 private:
   const std::filesystem::path m_path;
-  LibRawPtr m_processor;
   LibRawProcessedImagePtr m_raw_img;
   cv::Mat m_image;
 };
