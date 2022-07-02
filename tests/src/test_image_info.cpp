@@ -82,3 +82,16 @@ TEST_CASE("ctor3") {
   CHECK(img_info->image().cols > 0);
 }
 
+TEST_CASE("same_extents") {
+  auto info1 = ctor1();
+  auto info2 = ctor2();
+
+  CHECK(!info1->same_extents(info2));
+  CHECK(info2->same_extents(info2));
+}
+
+TEST_CASE("dimensions") {
+  auto info = ctor2();
+  CHECK(info->rows() == 4);
+  CHECK(info->cols() == 4);
+}
