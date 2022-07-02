@@ -13,12 +13,13 @@ find_package(OpenCV REQUIRED)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/extern/LibRaw-cmake/cmake/modules)
 find_package(LibRaw REQUIRED)
 
-# TODO Figure out how to add a name prefix "stack_exposures::stack_exposures" w.o. defining a package.
+include(cmake_modules/CodeCoverage.cmake)
+
 set(STACK_EXP_SRC
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/image_loader.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/image_aligner.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/image_info.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/image_stacker.cpp)
+    src/image_loader.cpp
+    src/image_aligner.cpp
+    src/image_info.cpp
+    src/image_stacker.cpp)
 
 add_library(stack_exp STATIC ${STACK_EXP_SRC})
 target_compile_features(stack_exp PUBLIC cxx_std_20)
@@ -26,6 +27,20 @@ target_include_directories(stack_exp
     PUBLIC include
     PRIVATE ${OpenCV_INCLUDE_DIRS} ${LibRaw_INCLUDE_DIR})
 target_link_libraries(stack_exp PRIVATE ${OpenCV_LIBS} ${LibRaw_LIBRARIES})
+
+# Create a version of the library that's compiled with coverage flags from CodeCoverage.cmake
+add_library(stack_exp_cov STATIC ${STACK_EXP_SRC})
+target_compile_features(stack_exp_cov PUBLIC cxx_std_20)
+
+# CURSES:  append_coverage_compiler_flags_to_target() fails because the multi-word value of CODE_COVERAGE_FLAGS is quoted.
+string(REPLACE " " ";" COVERAGE_FLAGS_LIST ${COVERAGE_COMPILER_FLAGS})
+target_compile_options(stack_exp_cov BEFORE PRIVATE ${COVERAGE_FLAGS_LIST})
+
+target_include_directories(stack_exp_cov
+    PUBLIC include
+    PRIVATE ${OpenCV_INCLUDE_DIRS} ${LibRaw_INCLUDE_DIR})
+target_link_libraries(stack_exp_cov PRIVATE ${OpenCV_LIBS} ${LibRaw_LIBRARIES})
+
 
 
 add_executable(stack_exposures src/main.cpp)
