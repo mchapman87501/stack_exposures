@@ -1,0 +1,20 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag build_stack_exposures:$(date +%s)
+    - name: Build stack_exposures using Docker
+      run: mkdir -p build_artifacts && docker run --rm -v${PWD}:/source build_stack_exposures:$(date +%s)
