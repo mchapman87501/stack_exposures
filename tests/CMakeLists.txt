@@ -92,11 +92,10 @@ set_tests_properties(
         WILL_FAIL true
         FAIL_REGULAR_EXPRESSION "Cannot process")
 
-
 append_coverage_compiler_flags()
 setup_target_for_coverage_lcov(NAME coverage_report
     EXECUTABLE ctest
     DEPENDENCIES
         test_image_info test_image_loader test_image_aligner
         stack_exposures_cov
-    EXCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/src/*" "/opt/homebrew/*")
+    EXCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/src/*" "/opt/homebrew/*" "/Applications/*")
