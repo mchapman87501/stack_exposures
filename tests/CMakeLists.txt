@@ -42,18 +42,55 @@ set(pit_img "${CMAKE_SOURCE_DIR}/tests/data/exif_extractor_missing_icc.jpg")
 add_test(
     NAME positive_integration_test
     COMMAND stack_exposures_cov -o "pit_result.jpg" ${pit_img} ${pit_img} ${pit_img})
+
 add_test(
     NAME understands_show_help_1
     COMMAND stack_exposures_cov -h)
+set_tests_properties(
+    understands_show_help_1
+    PROPERTIES
+        PASS_REGULAR_EXPRESSION "Usage:")
+
 add_test(
     NAME understands_show_help_2
     COMMAND stack_exposures_cov --help)
+set_tests_properties(
+    understands_show_help_2
+    PROPERTIES
+        PASS_REGULAR_EXPRESSION "Usage:")
+
 add_test(
     NAME positive_integration_test_no_align
     COMMAND stack_exposures_cov --no-align -o "pit_unaligned_result.jpg" ${pit_img} ${pit_img} ${pit_img})
-# TODO show help when no args given
-# TODO test unknown option
-# TODO test input images with inconsistent sizes
+
+add_test(
+    NAME stack_exposures_no_args_given
+    COMMAND stack_exposures_cov)
+set_tests_properties(
+    stack_exposures_no_args_given
+    PROPERTIES
+        WILL_FAIL true
+        FAIL_REGULAR_EXPRESSION "Usage:")
+
+add_test(
+    NAME stack_exposures_unknown_option
+    COMMAND stack_exposures_cov --foo)
+set_tests_properties(
+    stack_exposures_unknown_option
+    PROPERTIES
+        WILL_FAIL true
+        FAIL_REGULAR_EXPRESSION "Unknown option '--foo'")
+
+set(pit2_img "${CMAKE_SOURCE_DIR}/tests/data/exif_extractor_missing_icc_2.jpg")
+add_test(
+    NAME stack_exposures_multiple_image_sizes
+    COMMAND stack_exposures_cov -o "pit_mis.jpg" ${pit_img} ${pit2_img})
+set_tests_properties(
+    stack_exposures_multiple_image_sizes
+    PROPERTIES
+        WILL_FAIL true
+        FAIL_REGULAR_EXPRESSION "Cannot process")
+
 
 append_coverage_compiler_flags()
 setup_target_for_coverage_lcov(NAME coverage_report
