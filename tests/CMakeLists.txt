@@ -98,4 +98,6 @@ setup_target_for_coverage_lcov(NAME coverage_report
     DEPENDENCIES
         test_image_info test_image_loader test_image_aligner
         stack_exposures_cov
-    EXCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/src/*" "/opt/homebrew/*" "/Applications/*")
+    EXCLUDE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/*" "/opt/homebrew/*" "/Applications/*"
+        "/usr/*")

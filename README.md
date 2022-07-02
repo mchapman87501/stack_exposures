@@ -37,6 +37,15 @@ make coverage_report
 open ./coverage_report/index.html
 ```
 
+### Using Docker
+
+```shell
+sh ./docker_scripts/on_host/create_image.sh
+sh ./docker_scripts/on_host/run_tests.sh
+# If all tests pass:
+open ./build_artifacts/coverage_report/index.html
+```
+
 ## Formatting with clang-format
 
 **NB:** This depends on `fd`, an alternative to `find`.

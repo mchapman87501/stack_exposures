@@ -22,4 +22,5 @@ RUN useradd -u 10000 mchapman
 USER mchapman
 WORKDIR /home/mchapman
 
-ENTRYPOINT ["/bin/bash", "/source/docker_scripts/in_container/build.sh"]
+ENTRYPOINT ["/bin/bash"]
+CMD ["/source/docker_scripts/in_container/build.sh"]
