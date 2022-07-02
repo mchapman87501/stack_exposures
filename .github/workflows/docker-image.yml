@@ -6,9 +6,6 @@ on:
   pull_request:
     branches: [ "main" ]
 
-env:
-   NAME_TAG: build_stack_exposures:$(date +%s)
-
 jobs:
 
   build:
@@ -17,7 +14,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: Generate docker name:tag
+      run: echo "name_tag=build_stack_exposures:$(date +%s)" >> $GITHUB_ENV
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag ${{ env.NAME_TAG }}
+      run: docker build . --file Dockerfile --tag ${{ env.name_tag }}
     - name: Build stack_exposures using Docker
-      run: mkdir -p build_artifacts && docker run --rm -v${PWD}:/source ${{ env.NAME_TAG }}
+      run: mkdir -p build_artifacts && docker run --rm -v${PWD}:/source ${{ env.name_tag }}
