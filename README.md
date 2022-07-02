@@ -4,6 +4,7 @@ This is a CLI for stacking multiple image exposures.  It relies on opencv and li
 
 ## Building
 
+### On Host
 To compile and run the stack_exposures executable:
 ```shell
 mkdir -p build/release
@@ -13,7 +14,19 @@ make
 ./stack_exposures --help
 ```
 
+### Using Docker
+
+```shell
+sh ./docker_scripts/on_host/create_image.sh
+sh ./docker_scripts/on_host/build_stack_exposures.sh
+```
+
+If the above steps complete successfully, you should find a `stack_exposures` executable
+in `./build_artifacts`.
+
 ## Running Tests
+
+### On Host
 
 ```shell
 mkdir -p build/debug
