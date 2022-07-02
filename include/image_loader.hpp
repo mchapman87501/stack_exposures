@@ -13,6 +13,14 @@ class ImageLoader {
 public:
   ImageLoader();
 
+  /**
+   * @brief      Loads an image.
+   *
+   * @param[in]  image_path  pathname of the image
+   *
+   * @return     ImageInfo describing the loaded image.  image() may be empty in
+   * case of error.
+   */
   ImageInfo::Ptr load_image(const std::filesystem::path &image_path);
 
 private:
