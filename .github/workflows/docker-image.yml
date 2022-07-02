@@ -21,4 +21,4 @@ jobs:
     - name: Build stack_exposures using Docker
       run: |
         mkdir -p build_artifacts
-        docker run --rm -v${PWD}:/source ${{ env.name_tag }}
+        docker run --rm -v${PWD}:/source --user root ${{ env.name_tag }}
