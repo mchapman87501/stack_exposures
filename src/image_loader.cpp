@@ -18,9 +18,9 @@ void ImageLoader::check(int status, const std::string &msg) {
     throw runtime_error(outs.str());
   }
   if (LIBRAW_SUCCESS != status) {
-    const char *status_msg =
+    const auto err =
         (status < 0) ? m_processor->strerror(status) : std::strerror(status);
-    cerr << msg << "; status = " << status << " (" << status_msg << ")" << endl;
+    cerr << msg << "; status = " << status << " (" << err << ")" << endl;
     throw runtime_error(msg);
   }
 }

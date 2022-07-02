@@ -10,6 +10,7 @@ catch_discover_tests(test_image_info)
 
 
 add_executable(test_image_loader src/test_image_loader.cpp)
+target_compile_definitions(test_image_loader PUBLIC TEST_DATA_DIR="${CMAKE_SOURCE_DIR}/tests/data/")
 target_compile_features(test_image_loader PUBLIC cxx_std_20)
 target_include_directories(test_image_loader
     PUBLIC ../include

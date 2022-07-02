@@ -12,7 +12,8 @@ auto ctor1() {
   return std::make_shared<ImageInfo>(path, img);
 }
 
-void throw_on_fail(StackExposures::LibRawPtr proc, int status, const std::string& msg) {
+void throw_on_fail(StackExposures::LibRawPtr proc, int status,
+                   const std::string &msg) {
   if (status > 0) {
     throw std::runtime_error(msg + std::strerror(status));
   }
@@ -21,32 +22,30 @@ void throw_on_fail(StackExposures::LibRawPtr proc, int status, const std::string
   }
 }
 
-
 // Expect test to run in .../build/tests
 std::filesystem::path ctor2_path("not_a_real_image.rw2");
 
 auto ctor2() {
-	using namespace StackExposures;
+  using namespace StackExposures;
 
-  
-	LibRawPtr processor = std::make_shared<LibRaw>();
-  // Try to fabricate a processed image that contains no real data, but that will not
-  // crash on processor->dcraw_clear_mem.
-  // Mimic internal logic of LibRaw::dcraw_make_mem_image.
+  LibRawPtr processor = std::make_shared<LibRaw>();
+  // Try to fabricate a processed image that contains no real data, but that
+  // will not crash on processor->dcraw_clear_mem. Mimic internal logic of
+  // LibRaw::dcraw_make_mem_image.
   unsigned int width = 4;
   unsigned int height = 4;
   unsigned int colors = 3; // RGB
   unsigned int bytes_per_sample = 1;
   unsigned int dummy_data_size = (width * bytes_per_sample * colors) * height;
   libraw_processed_image_t *dummy = (libraw_processed_image_t *)::malloc(
-    sizeof(libraw_processed_image_t) + dummy_data_size);
+      sizeof(libraw_processed_image_t) + dummy_data_size);
   dummy->height = height;
   dummy->width = width;
   dummy->colors = colors;
   dummy->bits = bytes_per_sample * 8;
   dummy->data_size = dummy_data_size;
 
-	return std::make_shared<ImageInfo>(processor, ctor2_path, dummy);
+  return std::make_shared<ImageInfo>(processor, ctor2_path, dummy);
 }
 
 auto ctor3() {
