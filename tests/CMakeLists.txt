@@ -19,8 +19,17 @@ target_link_libraries(test_image_loader
     PUBLIC stack_exp_cov PRIVATE Catch2::Catch2WithMain ${OpenCV_LIBS} ${LibRaw_LIBRARIES})
 catch_discover_tests(test_image_loader)
 
+add_executable(test_image_aligner src/test_image_aligner.cpp)
+target_compile_features(test_image_aligner PUBLIC cxx_std_20)
+target_include_directories(test_image_aligner
+    PUBLIC ../include
+    PRIVATE ${OpenCV_INCLUDE_DIRS} ${LibRaw_INCLUDE_DIR})
+target_link_libraries(test_image_aligner
+    PUBLIC stack_exp_cov PRIVATE Catch2::Catch2WithMain ${OpenCV_LIBS} ${LibRaw_LIBRARIES})
+catch_discover_tests(test_image_aligner)
+
 append_coverage_compiler_flags()
 setup_target_for_coverage_lcov(NAME coverage_report
     EXECUTABLE ctest
-    DEPENDENCIES test_image_info test_image_loader
+    DEPENDENCIES test_image_info test_image_loader test_image_aligner
     EXCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/src/*" "/opt/homebrew/*")
