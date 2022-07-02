@@ -18,8 +18,8 @@ public:
    *
    * @param[in]  image_path  pathname of the image
    *
-   * @return     ImageInfo describing the loaded image.  image() may be empty in
-   * case of error.
+   * @return     The loaded image, with metadata.  The 'image()' of the return 
+   * value may be empty in case of error.
    */
   ImageInfo::Ptr load_image(const std::filesystem::path &image_path);
 
