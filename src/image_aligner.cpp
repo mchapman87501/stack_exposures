@@ -54,10 +54,9 @@ ImageInfo::Ptr ImageAligner::align_internal(ImageInfo::Ptr ref,
   const double termination_eps = 1.0e-6;
   Mat warp_matrix = Mat::eye(2, 3, CV_32F);
 
-  double correlation_val =
-      findTransformECC(ref_gray, to_align_gray, warp_matrix, warp_mode,
-                       TermCriteria(TermCriteria::COUNT + TermCriteria::EPS,
-                                    num_iterations, termination_eps));
+  findTransformECC(ref_gray, to_align_gray, warp_matrix, warp_mode,
+                   TermCriteria(TermCriteria::COUNT + TermCriteria::EPS,
+                                num_iterations, termination_eps));
 
   // Do the alignment.
   Mat warped_image =

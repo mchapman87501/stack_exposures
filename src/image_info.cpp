@@ -15,7 +15,6 @@ ImageInfo::ImageInfo(LibRawPtr processor, const std::filesystem::path &path,
           raw_img, [processor](auto p) { processor->dcraw_clear_mem(p); })) {
   int h = m_raw_img->height;
   int w = m_raw_img->width;
-  int c = m_raw_img->colors;
 
   // m_image references new_value->data but doesn't take ownership.
   // ImageInfo stores m_raw_img -- memory management.
