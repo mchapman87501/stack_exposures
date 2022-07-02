@@ -44,7 +44,6 @@ target_link_libraries(stack_exp_cov PRIVATE ${OpenCV_LIBS} ${LibRaw_LIBRARIES})
 
 
 add_executable(stack_exposures src/main.cpp)
-
 target_compile_features(stack_exposures PUBLIC cxx_std_20)
 target_include_directories(stack_exposures
     PUBLIC include

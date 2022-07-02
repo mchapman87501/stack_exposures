@@ -21,6 +21,7 @@ target_link_libraries(test_image_loader
 catch_discover_tests(test_image_loader)
 
 add_executable(test_image_aligner src/test_image_aligner.cpp)
+target_compile_definitions(test_image_aligner PUBLIC TEST_DATA_DIR="${TEST_DATA_DIR}")
 target_compile_features(test_image_aligner PUBLIC cxx_std_20)
 target_include_directories(test_image_aligner
     PUBLIC ../include
@@ -38,7 +39,7 @@ target_include_directories(stack_exposures_cov
 target_link_libraries(stack_exposures_cov PUBLIC stack_exp_cov PRIVATE ${OpenCV_LIBS} ${LibRaw_LIBRARIES})
 
 # TODO remove the output image at the end of the test:
-set(pit_img "${CMAKE_SOURCE_DIR}/tests/data/exif_extractor_missing_icc.jpg")
+set(pit_img "${TEST_DATA_DIR}/exif_extractor_missing_icc.jpg")
 add_test(
     NAME positive_integration_test
     COMMAND stack_exposures_cov -o "pit_result.jpg" ${pit_img} ${pit_img} ${pit_img})
@@ -81,7 +82,7 @@ set_tests_properties(
         WILL_FAIL true
         FAIL_REGULAR_EXPRESSION "Unknown option '--foo'")
 
-set(pit2_img "${CMAKE_SOURCE_DIR}/tests/data/exif_extractor_missing_icc_2.jpg")
+set(pit2_img "${TEST_DATA_DIR}/exif_extractor_missing_icc_2.jpg")
 add_test(
     NAME stack_exposures_multiple_image_sizes
     COMMAND stack_exposures_cov -o "pit_mis.jpg" ${pit_img} ${pit2_img})
