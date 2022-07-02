@@ -19,4 +19,6 @@ jobs:
     - name: Build the Docker image
       run: docker build . --file Dockerfile --tag ${{ env.name_tag }}
     - name: Build stack_exposures using Docker
-      run: mkdir -p build_artifacts && docker run --rm -v${PWD}:/source ${{ env.name_tag }}
+      run: |
+        mkdir -p build_artifacts
+        docker run --rm -v${PWD}:/source ${{ env.name_tag }}

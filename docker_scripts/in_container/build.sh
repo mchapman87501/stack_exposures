@@ -2,7 +2,8 @@
 set -e -u
 
 
-cd
+cd ${HOME}
+echo "HOME is ${PWD}"
 mkdir -p build/release
 cd build/release
 
