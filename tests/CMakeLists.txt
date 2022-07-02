@@ -19,7 +19,7 @@ target_link_libraries(test_image_loader
 catch_discover_tests(test_image_loader)
 
 append_coverage_compiler_flags()
-setup_target_for_coverage_gcovr_html(NAME coverage_gcovr
+setup_target_for_coverage_lcov(NAME coverage_report
     EXECUTABLE ctest
     DEPENDENCIES test_image_info test_image_loader
     EXCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/src/*" "/opt/homebrew/*")
