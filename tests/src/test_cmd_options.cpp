@@ -8,12 +8,6 @@
 #include <sstream>
 
 namespace {
-struct SystemExit : public std::runtime_error {
-  const int m_exit_code;
-  SystemExit(int exit_code)
-      : m_exit_code(exit_code), std::runtime_error(std::to_string(exit_code)) {}
-};
-
 // See https://gist.github.com/AndreLouisCaron/1841061
 class Redirect {
   std::ostream &m_stream;
@@ -27,12 +21,6 @@ public:
 
   ~Redirect() { m_stream.rdbuf(m_buff); }
 };
-} // namespace
-
-// https://github.com/catchorg/Catch2/issues/1813#issuecomment-563762230
-void exit(int status) { throw SystemExit(status); }
-
-namespace {
 
 enum class ExitCondition {
   no_exception,
@@ -41,10 +29,9 @@ enum class ExitCondition {
 };
 
 ExitCondition with_options(const CmdLine::ArgVec &args, int expected_code) {
-  try {
-    CmdLine::CmdOptions options(args);
-  } catch (const SystemExit &e) {
-    return (e.m_exit_code == expected_code)
+  CmdLine::CmdOptions options(args);
+  if (options.should_exit()) {
+    return (options.exit_code() == expected_code)
                ? ExitCondition::expected_exit_code
                : ExitCondition::unexpected_exit_code;
   }
@@ -86,8 +73,9 @@ public:
 } // namespace
 
 TEST_CASE("empty args") {
-  auto result = with_options({}, 2);
-  REQUIRE(result == ExitCondition::expected_exit_code);
+  auto result = CmdOptionsResult({}, 2);
+  CHECK(result.condition() == ExitCondition::expected_exit_code);
+  CHECK(result.cerr_contains("Internal Error"));
 }
 
 TEST_CASE("help with '-h'") {

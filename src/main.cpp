@@ -16,6 +16,9 @@ int main(int argc, char *argv[]) {
   using namespace StackExposures;
 
   CmdLine::CmdOptions opts(CmdLine::arg_vector(argc, (const char **)argv));
+  if (opts.should_exit()) {
+    return opts.exit_code();
+  }
 
   using ImageInfoFuture = shared_future<ImageInfo::Ptr>;
 

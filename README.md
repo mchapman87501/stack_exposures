@@ -47,7 +47,7 @@ sh ./docker_scripts/on_host/build_stack_exposures.sh
 ```shell
 mkdir -p build/debug
 cd build/debug
-cmake -DCMAKE_BUILD_TYPE=Debug ../..
+cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ../..
 cmake --build . --target coverage_report
 # If all tests pass:
 open ./coverage_report/index.html

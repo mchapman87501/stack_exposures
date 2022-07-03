@@ -36,7 +36,8 @@ CmdOptions::CmdOptions(const ArgVec &args)
   const string output_eq("--output=");
 
   if (args.empty()) {
-    show_help("Internal error: empty args vector", 2);
+    show_error("Internal Error: empty args vector", 2);
+    return;
   }
   m_invoked_as = args[0];
 
@@ -47,23 +48,27 @@ CmdOptions::CmdOptions(const ArgVec &args)
     if ((curr == "-o") || (curr == "--output")) {
       i++;
       if (i >= i_max) {
-        show_help("No output path was provided: '" + curr + "'");
+        show_error("No output path was provided: '" + curr + "'", 1);
+        return;
       }
       m_outpath = filesystem::path(args[i]);
     } else if (curr.starts_with(output_eq)) {
       const string outpath = curr.substr(output_eq.size());
       if (outpath.empty()) {
-        show_help("No output path was provided: '" + curr + "'");
+        show_error("No output path was provided: '" + curr + "'", 1);
+        return;
       }
       m_outpath = filesystem::path(outpath);
     } else if (curr == "--no-align") {
       m_align = false;
     } else if ((curr == "-h") || (curr == "--help")) {
-      show_help();
+      show_help(cout, 0);
+      return;
     } else if (curr.front() == '-') {
       ostringstream outs;
       outs << "Unknown option '" << curr << "'.";
-      show_help(outs.str());
+      show_error(outs.str(), 1);
+      return;
     } else {
       m_input_images.push_back(filesystem::path(curr));
     }
@@ -71,7 +76,8 @@ CmdOptions::CmdOptions(const ArgVec &args)
   }
 
   if (m_input_images.size() < 1) {
-    show_help(cerr, 1);
+    show_error("Please provide at least one input image.", 1);
+    return;
   }
 }
 
@@ -82,7 +88,7 @@ void CmdOptions::show_help(ostream &outs, int exit_code) {
   const string output_path_help(op_outs.str());
 
   outs << "Usage: " << m_invoked_as
-       << " [-o|--output path] [--no-align] [-h|--help] image_filaname "
+       << " [-o|--output path] [--no-align] [-h|--help] image_filename "
           "[image_filename...]"
        << endl
        << "CmdOptions:" << endl
@@ -95,10 +101,10 @@ void CmdOptions::show_help(ostream &outs, int exit_code) {
        << "Arguments:" << endl
        << padded_arg_help("  <image_filename>", "path of an image to stack")
        << endl;
-  std::exit(exit_code);
+  m_exit_code = exit_code;
 }
 
-void CmdOptions::show_help(string_view error_msg, int exit_code) {
+void CmdOptions::show_error(string_view error_msg, int exit_code) {
   cerr << "Error: " << error_msg << endl;
   show_help(cerr, exit_code);
 }
