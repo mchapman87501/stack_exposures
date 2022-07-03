@@ -48,17 +48,6 @@ target_include_directories(stack_exposures_cov
     PRIVATE ${OpenCV_INCLUDE_DIRS} ${LibRaw_INCLUDE_DIR})
 target_link_libraries(stack_exposures_cov PUBLIC stack_exp_cov PRIVATE ${OpenCV_LIBS} ${LibRaw_LIBRARIES})
 
-
-#=======================================================================
-# Catch2-based tests
-# Catch2 seems to offer no easy way to examine stderr; hence adding
-# this instead of using catch_discover_tests alone.
-#-----------------------------------------------------------------------
-add_test(NAME test_cmd_options_stderr COMMAND test_cmd_options)
-set_tests_properties(test_cmd_options_stderr
-    PROPERTIES
-        PASS_REGULAR_EXPRESSION "No output path")
-
 #=======================================================================
 # Integration tests
 #-----------------------------------------------------------------------

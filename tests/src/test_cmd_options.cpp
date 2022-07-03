@@ -50,6 +50,41 @@ ExitCondition with_options(const CmdLine::ArgVec &args, int expected_code) {
   }
   return ExitCondition::no_exception;
 }
+
+class CmdOptionsResult {
+    ExitCondition m_condition;
+    std::string m_cout;
+    std::string m_cerr;
+
+public:
+    CmdOptionsResult(const CmdLine::ArgVec &args, int expected_code) {
+        std::ostringstream couts;
+        Redirect cout_capture(couts, std::cout);
+
+        std::ostringstream cerrs;
+        Redirect cerr_capture(cerrs, std::cerr);
+
+        m_condition = with_options(args, expected_code);
+        m_cout = couts.str();
+        m_cerr = cerrs.str();
+    }
+
+    const ExitCondition condition() const {
+        return m_condition;
+    }
+
+    std::string_view cout() const { return m_cout; }
+    std::string_view cerr() const { return m_cerr; }
+
+    bool cout_contains(std::string_view substr) {
+        return m_cout.find(substr) != std::string::npos;
+    }
+
+    bool cerr_contains(std::string_view substr) {
+        return m_cerr.find(substr) != std::string::npos;
+    }
+};
+
 } // namespace
 
 TEST_CASE("empty args") {
@@ -57,28 +92,42 @@ TEST_CASE("empty args") {
   REQUIRE(result == ExitCondition::expected_exit_code);
 }
 
-TEST_CASE("no args") {
-  auto result = with_options({"<test_program>"}, 1);
-  REQUIRE(result == ExitCondition::expected_exit_code);
+TEST_CASE("help with '-h'") {
+    auto result = CmdOptionsResult({"<test_program>", "-h"}, 0);
+    CHECK(result.condition() == ExitCondition::expected_exit_code);
+    CHECK(result.cout_contains("Usage:"));
 }
 
-TEST_CASE("'-o' no value") {
-  // See CMakeLists.txt for a feeble attempt to verify expected usage messages.
-  auto result = with_options({"<test_program>", "-o"}, 1);
-  REQUIRE(result == ExitCondition::expected_exit_code);
+TEST_CASE("help with '--help'") {
+    auto result = CmdOptionsResult({"<test_program>", "--help"}, 0);
+    CHECK(result.condition() == ExitCondition::expected_exit_code);
+    CHECK(result.cout_contains("Usage:"));
+}
+
+TEST_CASE("no args") {
+  auto result = CmdOptionsResult({"<test_program>"}, 1);
+  CHECK(result.condition() == ExitCondition::expected_exit_code);
+  CHECK(result.cerr_contains("Usage:"));
 }
 
 // TEST_CASE names must not start with bare "-" or "--".  If they do, they will
 // annoy/confuse CMake's ctest.
-TEST_CASE("'--output' no value") {
-  auto result = with_options({"<test_program>", "--output"}, 1);
-  REQUIRE(result == ExitCondition::expected_exit_code);
+TEST_CASE("no value for '-o'") {
+  auto result = CmdOptionsResult({"<test_program>", "-o"}, 1);
+  CHECK(result.condition() == ExitCondition::expected_exit_code);
+  CHECK(result.cerr_contains("No output path"));
 }
 
-TEST_CASE("'--output='<missing_value>") {
-  auto result =
-      with_options({"<test_program>", "--output=", "a.jpg", "b.jpg"}, 1);
-  REQUIRE(result == ExitCondition::expected_exit_code);
+TEST_CASE("no value for '--output'") {
+  auto result = CmdOptionsResult({"<test_program>", "--output"}, 1);
+  CHECK(result.condition() == ExitCondition::expected_exit_code);
+  CHECK(result.cerr_contains("No output path"));
+}
+
+TEST_CASE("no value for '--output='") {
+  auto result = CmdOptionsResult({"<test_program>", "--output=", "a.jpg", "b.jpg"}, 1);
+  CHECK(result.condition() == ExitCondition::expected_exit_code);
+  CHECK(result.cerr_contains("No output path"));
 }
 
 TEST_CASE("typical usage") {
