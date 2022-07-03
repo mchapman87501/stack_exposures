@@ -1,3 +1,14 @@
+append_coverage_compiler_flags()
+
+add_executable(test_cmd_options
+    src/test_cmd_options.cpp ../src/cmd_options.cpp)
+target_compile_features(test_cmd_options PUBLIC cxx_std_20)
+target_include_directories(test_cmd_options
+    PUBLIC ../include
+    PRIVATE ${OpenCV_INCLUDE_DIRS} ${LibRaw_INCLUDE_DIR})
+target_link_libraries(test_cmd_options
+    PUBLIC PRIVATE Catch2::Catch2WithMain)
+catch_discover_tests(test_cmd_options)
 
 add_executable(test_image_info src/test_image_info.cpp)
 target_compile_features(test_image_info PUBLIC cxx_std_20)
@@ -7,7 +18,6 @@ target_include_directories(test_image_info
 target_link_libraries(test_image_info
     PUBLIC stack_exp_cov PRIVATE Catch2::Catch2WithMain ${OpenCV_LIBS} ${LibRaw_LIBRARIES})
 catch_discover_tests(test_image_info)
-
 
 add_executable(test_image_loader src/test_image_loader.cpp)
 set(TEST_DATA_DIR "${CMAKE_SOURCE_DIR}/tests/data/")
@@ -31,13 +41,27 @@ target_link_libraries(test_image_aligner
 catch_discover_tests(test_image_aligner)
 
 # Integration test:
-add_executable(stack_exposures_cov ../src/main.cpp)
+add_executable(stack_exposures_cov ../src/main.cpp ../src/cmd_options.cpp)
 target_compile_features(stack_exposures_cov PUBLIC cxx_std_20)
 target_include_directories(stack_exposures_cov
     PUBLIC ../include
     PRIVATE ${OpenCV_INCLUDE_DIRS} ${LibRaw_INCLUDE_DIR})
 target_link_libraries(stack_exposures_cov PUBLIC stack_exp_cov PRIVATE ${OpenCV_LIBS} ${LibRaw_LIBRARIES})
 
+
+#=======================================================================
+# Catch2-based tests
+# Catch2 seems to offer no easy way to examine stderr; hence adding
+# this instead of using catch_discover_tests alone.
+#-----------------------------------------------------------------------
+add_test(NAME test_cmd_options_stderr COMMAND test_cmd_options)
+set_tests_properties(test_cmd_options_stderr
+    PROPERTIES
+        PASS_REGULAR_EXPRESSION "No output path")
+
+#=======================================================================
+# Integration tests
+#-----------------------------------------------------------------------
 # TODO remove the output image at the end of the test:
 set(pit_img "${TEST_DATA_DIR}/exif_extractor_missing_icc.jpg")
 add_test(
@@ -92,12 +116,13 @@ set_tests_properties(
         WILL_FAIL true
         FAIL_REGULAR_EXPRESSION "Cannot process")
 
-append_coverage_compiler_flags()
 setup_target_for_coverage_lcov(NAME coverage_report
     EXECUTABLE ctest
     DEPENDENCIES
+        test_cmd_options
         test_image_info test_image_loader test_image_aligner
         stack_exposures_cov
     EXCLUDE
+        "include/*"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/*" "/opt/homebrew/*" "/Applications/*"
         "/usr/*")
