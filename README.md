@@ -2,6 +2,8 @@
 
 This is a CLI for stacking multiple image exposures.  It relies on [OpenCV](https://docs.opencv.org/4.5.5/) and [LibRaw](https://www.libraw.org/docs/API-CXX.html).
 
+![Github Docker CI](https://github.com/mchapman87501/stack_exposures/actions/workflows/docker-image.yml/badge.svg)
+
 ## Building
 
 ### On Host
