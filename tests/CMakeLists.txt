@@ -50,9 +50,9 @@ target_include_directories(stack_exposures_cov
     PRIVATE ${arg_parse_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${LibRaw_INCLUDE_DIR})
 target_link_libraries(stack_exposures_cov PUBLIC stack_exp_cov PRIVATE arg_parse::arg_parse ${OpenCV_LIBS} ${LibRaw_LIBRARIES})
 
-#=======================================================================
+# =======================================================================
 # Integration tests
-#-----------------------------------------------------------------------
+# -----------------------------------------------------------------------
 # TODO remove the output image at the end of the test:
 set(pit_img "${TEST_DATA_DIR}/exif_extractor_missing_icc.jpg")
 add_test(
@@ -65,7 +65,7 @@ add_test(
 set_tests_properties(
     understands_show_help_1
     PROPERTIES
-        PASS_REGULAR_EXPRESSION "Usage:")
+    PASS_REGULAR_EXPRESSION "Usage:")
 
 add_test(
     NAME understands_show_help_2
@@ -73,7 +73,7 @@ add_test(
 set_tests_properties(
     understands_show_help_2
     PROPERTIES
-        PASS_REGULAR_EXPRESSION "Usage:")
+    PASS_REGULAR_EXPRESSION "Usage:")
 
 add_test(
     NAME positive_integration_test_no_align
@@ -85,8 +85,8 @@ add_test(
 set_tests_properties(
     stack_exposures_no_args_given
     PROPERTIES
-        WILL_FAIL true
-        FAIL_REGULAR_EXPRESSION "Usage:")
+    WILL_FAIL true
+    FAIL_REGULAR_EXPRESSION "Usage:")
 
 add_test(
     NAME stack_exposures_unknown_option
@@ -94,8 +94,8 @@ add_test(
 set_tests_properties(
     stack_exposures_unknown_option
     PROPERTIES
-        WILL_FAIL true
-        FAIL_REGULAR_EXPRESSION "Unknown option '--foo'")
+    WILL_FAIL true
+    FAIL_REGULAR_EXPRESSION "Unknown option '--foo'")
 
 set(pit2_img "${TEST_DATA_DIR}/exif_extractor_missing_icc_2.jpg")
 add_test(
@@ -104,15 +104,16 @@ add_test(
 set_tests_properties(
     stack_exposures_multiple_image_sizes
     PROPERTIES
-        WILL_FAIL true
-        FAIL_REGULAR_EXPRESSION "Cannot process")
+    WILL_FAIL true
+    FAIL_REGULAR_EXPRESSION "Cannot process")
 
 setup_target_for_coverage_lcov(NAME coverage_report
     EXECUTABLE ctest
     DEPENDENCIES
-        test_image_info test_image_loader test_image_aligner
-        stack_exposures_cov
+    test_image_info test_image_loader test_image_aligner
+    stack_exposures_cov
     EXCLUDE
-        "include/*"
-        "${CMAKE_CURRENT_SOURCE_DIR}/src/*" "/opt/homebrew/*" "/Applications/*"
-        "/usr/*")
+    "include/*"
+    "build/*"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*" "/opt/homebrew/*" "/Applications/*"
+    "/usr/*")
