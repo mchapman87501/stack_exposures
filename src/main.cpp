@@ -18,6 +18,8 @@ using namespace StackExposures;
 using ImageInfoFuture = shared_future<ImageInfo::Ptr>;
 
 auto load_images(std::vector<std::filesystem::path> &&image_paths) {
+  // Widen the image-loading bottleneck, without having too many
+  // images in memory at once.
   constexpr size_t max_concurrent_loads = 4;
   counting_semaphore gate(max_concurrent_loads);
 
