@@ -26,14 +26,14 @@ auto load_images(std::vector<std::filesystem::path> &&image_paths) {
   deque<ImageInfoFuture> result;
   for (const auto image_path : image_paths) {
     ImageLoader loader;
-    auto load_async = [&gate, image_path]() {
+    auto load_async = [&gate](const std::filesystem::path &curr_path) {
       ImageLoader loader;
       gate.acquire();
-      auto result = loader.load_image(image_path);
+      auto result = loader.load_image(curr_path);
       gate.release();
       return result;
     };
-    result.push_back(async(launch::async, load_async));
+    result.push_back(async(launch::async, load_async, image_path));
   }
   return result;
 }
