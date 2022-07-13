@@ -6,7 +6,7 @@
 
 #include <opencv2/imgcodecs.hpp>
 
-#include "cmd_options.hpp"
+#include "arg_parse.hpp"
 #include "image_aligner.hpp"
 #include "image_loader.hpp"
 #include "image_stacker.hpp"
@@ -15,17 +15,27 @@ int main(int argc, char *argv[]) {
   using namespace std;
   using namespace StackExposures;
 
-  CmdLine::CmdOptions opts(CmdLine::arg_vector(argc, (const char **)argv));
-  if (opts.should_exit()) {
-    return opts.exit_code();
-  }
+auto parser = ArgParse::ArgumentParser::create("Stack images into a single image.");
+auto no_align = ArgParse::flag(parser, "--no-align", "--no-align", "Skip aligning images before stacking.");
+
+const std::string default_out_pathname("stacked.tiff");
+const std::filesystem::path default_out_path(default_out_pathname);
+const auto outpath_help = "Where to save the result; default '" + default_out_pathname + "'.";
+auto output_path = ArgParse::option<std::filesystem::path>(parser, "-o", "--output-path", outpath_help);
+
+auto input_images = ArgParse::argument<std::filesystem::path>(parser, "image", ArgParse::Nargs::one_or_more, "Stack these images.");
+
+parser->parse_args(argc, argv);
+if (parser->should_exit()) {
+    return parser->exit_code();
+}
 
   using ImageInfoFuture = shared_future<ImageInfo::Ptr>;
 
   constexpr size_t max_concurrent_loads = 4;
   counting_semaphore gate(max_concurrent_loads);
   deque<ImageInfoFuture> load_tasks;
-  for (const auto image_path : opts.input_images()) {
+  for (const auto image_path : input_images->values()) {
     ImageLoader loader;
     auto load_async = [&gate, image_path]() {
       ImageLoader loader;
@@ -40,6 +50,7 @@ int main(int argc, char *argv[]) {
   ImageAligner aligner;
   ImageStacker stacker;
 
+const bool align = !no_align->is_set();
   bool is_first = true;
   ImageInfo::Ptr ref_img(nullptr);
 
@@ -62,13 +73,15 @@ int main(int argc, char *argv[]) {
              << img_info->rows() << ") do not match first image ("
              << ref_img->cols() << " x " << ref_img->rows() << ")" << endl;
       } else {
-        auto aligned = opts.align() ? aligner.align(img_info) : img_info;
+        auto aligned = align ? aligner.align(img_info) : img_info;
         stacker.push(aligned->image());
       }
     }
   }
 
-  cout << "Saving result to " << opts.outpath() << endl;
-  cv::imwrite(opts.outpath().c_str(), stacker.result());
+// TODO arg_parse's Option needs to support default values.
+const std::string selected_outpath = (output_path->value().string() != "") ? output_path->value().string() : default_out_pathname;
+  cout << "Saving result to " << selected_outpath << endl;
+  cv::imwrite(selected_outpath, stacker.result());
   return 0;
 }

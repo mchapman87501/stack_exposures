@@ -1,14 +1,16 @@
-append_coverage_compiler_flags()
+if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    append_coverage_compiler_flags()
+endif()
 
-add_executable(test_cmd_options
-    src/test_cmd_options.cpp ../src/cmd_options.cpp)
-target_compile_features(test_cmd_options PUBLIC cxx_std_20)
-target_include_directories(test_cmd_options
+# Create a version of the library that's compiled with coverage flags from CodeCoverage.cmake
+string(REPLACE "src/" ";../src/" COV_SOURCES ${STACK_EXP_SRC})
+add_library(stack_exp_cov STATIC ${COV_SOURCES})
+target_compile_features(stack_exp_cov PUBLIC cxx_std_20)
+
+target_include_directories(stack_exp_cov
     PUBLIC ../include
     PRIVATE ${OpenCV_INCLUDE_DIRS} ${LibRaw_INCLUDE_DIR})
-target_link_libraries(test_cmd_options
-    PUBLIC PRIVATE Catch2::Catch2WithMain)
-catch_discover_tests(test_cmd_options)
+target_link_libraries(stack_exp_cov PRIVATE ${OpenCV_LIBS} ${LibRaw_LIBRARIES})
 
 add_executable(test_image_info src/test_image_info.cpp)
 target_compile_features(test_image_info PUBLIC cxx_std_20)
@@ -35,18 +37,18 @@ target_compile_definitions(test_image_aligner PUBLIC TEST_DATA_DIR="${TEST_DATA_
 target_compile_features(test_image_aligner PUBLIC cxx_std_20)
 target_include_directories(test_image_aligner
     PUBLIC ../include
-    PRIVATE ${OpenCV_INCLUDE_DIRS} ${LibRaw_INCLUDE_DIR})
+    PRIVATE ${arg_parse_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${LibRaw_INCLUDE_DIR})
 target_link_libraries(test_image_aligner
-    PUBLIC stack_exp_cov PRIVATE Catch2::Catch2WithMain ${OpenCV_LIBS} ${LibRaw_LIBRARIES})
+    PUBLIC stack_exp_cov PRIVATE Catch2::Catch2WithMain arg_parse::arg_parse ${OpenCV_LIBS} ${LibRaw_LIBRARIES})
 catch_discover_tests(test_image_aligner)
 
 # Integration test:
-add_executable(stack_exposures_cov ../src/main.cpp ../src/cmd_options.cpp)
+add_executable(stack_exposures_cov ../src/main.cpp)
 target_compile_features(stack_exposures_cov PUBLIC cxx_std_20)
 target_include_directories(stack_exposures_cov
     PUBLIC ../include
-    PRIVATE ${OpenCV_INCLUDE_DIRS} ${LibRaw_INCLUDE_DIR})
-target_link_libraries(stack_exposures_cov PUBLIC stack_exp_cov PRIVATE ${OpenCV_LIBS} ${LibRaw_LIBRARIES})
+    PRIVATE ${arg_parse_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${LibRaw_INCLUDE_DIR})
+target_link_libraries(stack_exposures_cov PUBLIC stack_exp_cov PRIVATE arg_parse::arg_parse ${OpenCV_LIBS} ${LibRaw_LIBRARIES})
 
 #=======================================================================
 # Integration tests
@@ -108,7 +110,6 @@ set_tests_properties(
 setup_target_for_coverage_lcov(NAME coverage_report
     EXECUTABLE ctest
     DEPENDENCIES
-        test_cmd_options
         test_image_info test_image_loader test_image_aligner
         stack_exposures_cov
     EXCLUDE
