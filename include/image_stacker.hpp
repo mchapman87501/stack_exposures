@@ -20,9 +20,23 @@ public:
   /**
    * @brief Get the stacked composite image.
    *
-   * @return an OpenCV image
+   * @return cv::Mat An 8-bit, 3 channel image
    */
-  cv::Mat result();
+  cv::Mat result8() const;
+
+  /**
+   * @brief Get the stacked composite image.
+   *
+   * @return cv::Mat A 16-bit, 3-channel image
+   */
+  cv::Mat result16() const;
+
+  /**
+   * @brief Get the stacked composite image.
+   *
+   * @return cv::Mat A 64-bit, floating point, 3-channel image
+   */
+  cv::Mat resultf() const;
 
 private:
   size_t m_width;
