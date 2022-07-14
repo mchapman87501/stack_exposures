@@ -36,6 +36,11 @@ jobs:
         tags: ${{ env.img_name_tag }}
         cache-to: type=gha,mode=max
         cache-from: type=gha
+        outputs: type=docker,dest=/tmp/build_stack_exposures.tar
+    -
+      name: Load Docker image
+      run: |
+        docker load --input /tmp/build_stack_exposures.tar
     -
       name: Build stack_exposures
       run: |
