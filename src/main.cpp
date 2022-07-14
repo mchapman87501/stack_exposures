@@ -68,15 +68,15 @@ auto load_images(std::vector<std::filesystem::path> image_paths) {
 
   deque<ImageInfoFuture> result;
   for (const auto image_path : image_paths) {
-    ImageLoader loader;
-    auto load_async = [&gate](const std::filesystem::path &curr_path) {
-      ImageLoader loader;
+    auto loader = ImageLoader::create();
+    const std::filesystem::path curr_path = image_path;
+    auto load_async = [&gate, loader, curr_path]() {
       gate.acquire();
-      auto result = loader.load_image(curr_path);
+      auto result = loader->load_image(curr_path);
       gate.release();
       return result;
     };
-    result.push_back(async(launch::async, load_async, image_path));
+    result.push_back(async(launch::async, load_async));
   }
   return result;
 }
@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
   while (!image_futures.empty()) {
     auto fut = image_futures.front();
     image_futures.pop_front();
-    auto img_info = fut.get();
+    ImageInfo::Ptr img_info = fut.get();
     cout << img_info->path() << endl << flush;
 
     if (!ref_img) {
