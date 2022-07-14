@@ -2,9 +2,8 @@ FROM ubuntu:22.04
 
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    git gcc python3 python3-pip cmake cmake-data libraw-dev libopencv-dev \
-    autoconf automake libtool pkg-config libjpeg-dev liblcms2-dev \
-    lcov \
+    git gcc lcov python3 python3-pip cmake cmake-data libraw-dev libopencv-dev \
+    libjpeg-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Instructions from https://github.com/catchorg/Catch2/blob/devel/docs/cmake-integration.md#installing-catch2-from-git-repository
