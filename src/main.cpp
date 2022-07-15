@@ -60,26 +60,29 @@ public:
   }
 };
 
-// Widen the image-loading bottleneck, without having too many
-// images in memory at once.
-constexpr size_t max_concurrent_loads = 4;
-counting_semaphore gate(max_concurrent_loads);
+struct AsyncImageLoader {
+  AsyncImageLoader(vector<filesystem::path> image_paths)
+      : m_gate(max_concurrent_loads) {
+    for (const auto image_path : image_paths) {
+      auto load_async = [this, image_path]() {
+        m_gate.acquire();
+        ImageLoader::Ptr my_loader = ImageLoader::create();
+        auto result = my_loader->load_image(image_path);
+        m_gate.release();
+        return result;
+      };
 
-auto load_images(vector<filesystem::path> image_paths) {
-  deque<ImageInfoFuture> result;
-  for (const auto image_path : image_paths) {
-    auto load_async = [image_path]() {
-      gate.acquire();
-      auto my_loader = ImageLoader::create();
-      auto result = my_loader->load_image(image_path);
-      gate.release();
-      return result;
-    };
-
-    result.push_back(async(launch::async, load_async));
+      m_futures.push_back(async(launch::async, load_async));
+    }
   }
-  return result;
-}
+
+  auto futures() { return m_futures; }
+
+private:
+  const static size_t max_concurrent_loads = 4;
+  counting_semaphore<max_concurrent_loads> m_gate;
+  deque<ImageInfoFuture> m_futures;
+};
 
 void report_size_mismatch(ImageInfo::Ptr ref_img, ImageInfo::Ptr img_info) {
   cerr << "Cannot process " << img_info->path() << ": image width x height ("
@@ -129,17 +132,14 @@ int main(int argc, char *argv[]) {
     return opt.exit_code();
   }
 
-  auto image_futures = load_images(opt.images());
-
   ImageAligner aligner;
   ImageStacker stacker;
 
   const bool align = opt.align();
   ImageInfo::Ptr ref_img(nullptr);
 
-  while (!image_futures.empty()) {
-    auto fut = image_futures.front();
-    image_futures.pop_front();
+  AsyncImageLoader loader(opt.images());
+  for (auto fut : loader.futures()) {
     ImageInfo::Ptr img_info = fut.get();
     cout << img_info->path() << endl << flush;
 
@@ -148,7 +148,6 @@ int main(int argc, char *argv[]) {
       ref_img = img_info;
       stacker.push(img_info->image());
     } else {
-
       if (!ref_img->same_extents(img_info)) {
         report_size_mismatch(ref_img, img_info);
       } else {
@@ -159,9 +158,6 @@ int main(int argc, char *argv[]) {
   }
 
   const std::string output_pathname(opt.output_pathname());
-  cout << "Saving result to " << output_pathname << endl;
-  // TODO Figure out how to support multiple bit depths/formats from cmdline.
-  // May need to introduce a Choice subclass of arg_parse::IOption.
   cv::imwrite(output_pathname, stacked_result(stacker, output_pathname));
   return 0;
 }
