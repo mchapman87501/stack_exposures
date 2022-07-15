@@ -4,8 +4,8 @@
 #include <string>
 
 TEST_CASE("Load non-existent image") {
-  auto loader = StackExposures::ImageLoader::create();
-  REQUIRE_THROWS_AS(loader->load_image("/no/such/image.jpg"),
+  StackExposures::ImageLoader loader;
+  REQUIRE_THROWS_AS(loader.load_image("/no/such/image.jpg"),
                     std::runtime_error);
 }
 
@@ -14,8 +14,8 @@ TEST_CASE("Load non-raw image") {
   const std::string data_dir(TEST_DATA_DIR);
   const std::string image_path(data_dir + "exif_extractor_missing_icc.jpg");
 
-  auto loader = StackExposures::ImageLoader::create();
-  auto image_info = loader->load_image(image_path);
+  StackExposures::ImageLoader loader;
+  auto image_info = loader.load_image(image_path);
   CHECK(image_info->path() == std::filesystem::path(image_path));
 }
 
@@ -23,8 +23,8 @@ TEST_CASE("Load raw image") {
   const std::string data_dir(TEST_DATA_DIR);
   const std::string image_path(data_dir + "from_filesamples_com/sample1.orf");
 
-  auto loader = StackExposures::ImageLoader::create();
-  auto image_info = loader->load_image(image_path);
+  StackExposures::ImageLoader loader;
+  auto image_info = loader.load_image(image_path);
   CHECK(image_info->path() == std::filesystem::path(image_path));
 }
 

@@ -9,8 +9,7 @@
 namespace StackExposures {
 class ImageLoader {
 public:
-  using Ptr = std::shared_ptr<ImageLoader>;
-  static Ptr create() { return Ptr(new ImageLoader()); }
+  ImageLoader();
 
   /**
    * @brief      Loads an image.
@@ -24,8 +23,6 @@ public:
 
 private:
   LibRawPtr m_processor;
-
-  ImageLoader();
 
   void check(int status, const std::string &msg);
 

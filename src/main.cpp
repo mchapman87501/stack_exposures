@@ -12,15 +12,13 @@
 #include "image_loader.hpp"
 #include "image_stacker.hpp"
 
-namespace {
-using namespace std;
 using namespace StackExposures;
 
-using ImageInfoFuture = shared_future<ImageInfo::Ptr>;
-
 namespace {
+using ImageInfoFuture = std::shared_future<ImageInfo::Ptr>;
+
 static const std::string default_out_pathname("stacked.tiff");
-}
+
 class CmdOption {
   ArgParse::ArgumentParser::Ptr m_parser;
   ArgParse::Flag::Ptr m_no_align;
@@ -61,34 +59,34 @@ public:
 };
 
 struct AsyncImageLoader {
-  AsyncImageLoader(vector<filesystem::path> image_paths)
+  AsyncImageLoader(std::vector<std::filesystem::path> image_paths)
       : m_gate(max_concurrent_loads) {
     for (const auto image_path : image_paths) {
       auto load_async = [this, image_path]() {
         m_gate.acquire();
-        ImageLoader::Ptr my_loader = ImageLoader::create();
-        auto result = my_loader->load_image(image_path);
+        ImageLoader loader;
+        auto result = loader.load_image(image_path);
         m_gate.release();
         return result;
       };
 
-      m_futures.push_back(async(launch::async, load_async));
+      m_futures.push_back(std::async(std::launch::async, load_async));
     }
   }
 
-  auto futures() { return m_futures; }
+  auto futures() const { return m_futures; }
 
 private:
-  const static size_t max_concurrent_loads = 4;
-  counting_semaphore<max_concurrent_loads> m_gate;
-  deque<ImageInfoFuture> m_futures;
+  constexpr static size_t max_concurrent_loads = 4;
+  std::counting_semaphore<max_concurrent_loads> m_gate;
+  std::deque<ImageInfoFuture> m_futures;
 };
 
 void report_size_mismatch(ImageInfo::Ptr ref_img, ImageInfo::Ptr img_info) {
-  cerr << "Cannot process " << img_info->path() << ": image width x height ("
-       << img_info->cols() << " x " << img_info->rows()
-       << ") do not match first image (" << ref_img->cols() << " x "
-       << ref_img->rows() << ")" << endl;
+  std::cerr << "Cannot process " << img_info->path()
+            << ": image width x height (" << img_info->cols() << " x "
+            << img_info->rows() << ") do not match first image ("
+            << ref_img->cols() << " x " << ref_img->rows() << ")" << std::endl;
 }
 
 std::string filename_suffix(std::string_view filename) {
@@ -124,9 +122,6 @@ auto stacked_result(const ImageStacker &stacker, std::string_view filename) {
 } // namespace
 
 int main(int argc, char *argv[]) {
-  using namespace std;
-  using namespace StackExposures;
-
   CmdOption opt(argc, argv);
   if (opt.should_exit()) {
     return opt.exit_code();
@@ -135,13 +130,12 @@ int main(int argc, char *argv[]) {
   ImageAligner aligner;
   ImageStacker stacker;
 
-  const bool align = opt.align();
   ImageInfo::Ptr ref_img(nullptr);
 
   AsyncImageLoader loader(opt.images());
   for (auto fut : loader.futures()) {
     ImageInfo::Ptr img_info = fut.get();
-    cout << img_info->path() << endl << flush;
+    std::cout << img_info->path() << std::endl << std::flush;
 
     if (!ref_img) {
       // TODO get the icc profile from the first image.
@@ -151,13 +145,13 @@ int main(int argc, char *argv[]) {
       if (!ref_img->same_extents(img_info)) {
         report_size_mismatch(ref_img, img_info);
       } else {
-        auto aligned = align ? aligner.align(img_info) : img_info;
+        auto aligned = opt.align() ? aligner.align(img_info) : img_info;
         stacker.push(aligned->image());
       }
     }
   }
 
-  const std::string output_pathname(opt.output_pathname());
+  const auto output_pathname(opt.output_pathname());
   cv::imwrite(output_pathname, stacked_result(stacker, output_pathname));
   return 0;
 }

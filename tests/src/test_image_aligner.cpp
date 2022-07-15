@@ -44,10 +44,10 @@ TEST_CASE("Unalignable") {
   // See CMakeLists.txt for TEST_DATA_DIR
   const std::string data_dir(TEST_DATA_DIR);
 
-  auto loader = StackExposures::ImageLoader::create();
+  StackExposures::ImageLoader loader;
 
-  auto img1 = loader->load_image(data_dir + "orientation1.jpg");
-  auto img2 = loader->load_image(data_dir + "orientation2.jpg");
+  auto img1 = loader.load_image(data_dir + "orientation1.jpg");
+  auto img2 = loader.load_image(data_dir + "orientation2.jpg");
 
   StackExposures::ImageAligner aligner;
   auto result1 = aligner.align(img1);

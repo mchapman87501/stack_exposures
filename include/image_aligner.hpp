@@ -9,8 +9,6 @@
 namespace StackExposures {
 class ImageAligner {
 public:
-  using Ptr = std::shared_ptr<ImageAligner>;
-
   ImageAligner();
 
   /**

@@ -126,3 +126,9 @@ setup_target_for_coverage_lcov(NAME coverage_report
     "build/*"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*" "/opt/homebrew/*" "/Applications/*"
     "/usr/*")
+
+# *nix only:
+add_custom_command(TARGET coverage_report
+    PRE_BUILD
+    COMMAND find ${CMAKE_BINARY_DIR} -name '*.gcda' -exec rm "{}" "';'"
+)

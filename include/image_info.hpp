@@ -9,7 +9,6 @@
 
 namespace StackExposures {
 struct ImageInfo {
-  using UniquePtr = std::unique_ptr<ImageInfo>;
   using Ptr = std::shared_ptr<ImageInfo>;
 
   /**
