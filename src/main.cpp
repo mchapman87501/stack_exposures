@@ -97,15 +97,15 @@ std::string filename_suffix(std::string_view filename) {
 }
 
 auto lowercase(std::string_view sval) {
-  std::string result;
-  std::transform(sval.begin(), sval.end(), result.end(),
+  std::string result(sval);
+  std::transform(result.begin(), result.end(), result.begin(),
                  [](unsigned char c) { return std::tolower(c); });
   return result;
 }
 
 auto stacked_result(const ImageStacker &stacker, std::string_view filename) {
   auto suffix = lowercase(filename_suffix(filename));
-  if (suffix == ".tiff") {
+  if ((suffix == ".tiff") || (suffix == ".tif")) {
     return stacker.result16();
   }
   if (suffix == ".png") {

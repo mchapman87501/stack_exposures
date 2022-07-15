@@ -107,6 +107,15 @@ set_tests_properties(
     WILL_FAIL true
     FAIL_REGULAR_EXPRESSION "Cannot process")
 
+foreach(suffix IN ITEMS jpg png tif tiff)
+    set(test_name "stack_exposures_suffix_${suffix}")
+    message(STATUS "Test name is ${test_name}")
+    add_test(
+        NAME ${test_name}
+        COMMAND stack_exposures_cov -o "pit_suffix.${suffix}" ${pit_img} ${pit_img}
+    )
+endforeach()
+
 setup_target_for_coverage_lcov(NAME coverage_report
     EXECUTABLE ctest
     DEPENDENCIES
