@@ -8,9 +8,8 @@
 
 namespace StackExposures {
 class ImageLoader {
-  using Ptr = std::shared_ptr<ImageLoader>;
-
 public:
+  using Ptr = std::shared_ptr<ImageLoader>;
   static Ptr create() { return Ptr(new ImageLoader()); }
 
   /**

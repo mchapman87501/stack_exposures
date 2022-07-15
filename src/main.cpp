@@ -60,22 +60,22 @@ public:
   }
 };
 
-auto load_images(std::vector<std::filesystem::path> image_paths) {
-  // Widen the image-loading bottleneck, without having too many
-  // images in memory at once.
-  constexpr size_t max_concurrent_loads = 4;
-  counting_semaphore gate(max_concurrent_loads);
+// Widen the image-loading bottleneck, without having too many
+// images in memory at once.
+constexpr size_t max_concurrent_loads = 4;
+counting_semaphore gate(max_concurrent_loads);
 
+auto load_images(vector<filesystem::path> image_paths) {
   deque<ImageInfoFuture> result;
   for (const auto image_path : image_paths) {
-    auto loader = ImageLoader::create();
-    const std::filesystem::path curr_path = image_path;
-    auto load_async = [&gate, loader, curr_path]() {
+    auto load_async = [image_path]() {
       gate.acquire();
-      auto result = loader->load_image(curr_path);
+      auto my_loader = ImageLoader::create();
+      auto result = my_loader->load_image(image_path);
       gate.release();
       return result;
     };
+
     result.push_back(async(launch::async, load_async));
   }
   return result;
