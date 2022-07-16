@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
   }
 
   ImageAligner aligner;
-  IImageStacker::Ptr stacker = MeanImageStacker::create();
+  IImageStacker::Ptr stacker = ImageStacker::create();
 
   ImageInfo::Ptr ref_img(nullptr);
 

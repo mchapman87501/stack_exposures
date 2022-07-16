@@ -8,11 +8,14 @@ namespace StackExposures {
 namespace {
 void configure(LibRawPtr processor) {
   // Adjust processing of raw images.
-  processor->imgdata.params.use_camera_wb = 1;
-  //   processor->imgdata.params.output_bps = -4; // 16-bit.
+  // NB: don't muck with bit depth.  Load with default 8-bits / color component,
+  // to match cv::imread defaults.
 
-  // Use sRGB gamma curve.  See gamm[6] at
-  // https://www.libraw.org/docs/API-datastruct.html#libraw_output_params_t
+  processor->imgdata.params.use_camera_wb = 1;
+
+  // Use sRGB color space and gamma curve.  See output_color, and See gamm[6],
+  // at https://www.libraw.org/docs/API-datastruct.html#libraw_output_params_t
+  processor->imgdata.params.output_color = 1; // sRGB
   processor->imgdata.params.gamm[0] = 1.0 / 2.4;
   processor->imgdata.params.gamm[1] = 12.92;
   processor->imgdata.params.no_auto_bright = 1;
@@ -25,7 +28,9 @@ void configure(LibRawPtr processor) {
 
 } // namespace
 
-ImageLoader::ImageLoader() : m_processor(std::make_shared<LibRaw>()) {}
+ImageLoader::ImageLoader() : m_processor(std::make_shared<LibRaw>()) {
+  configure(m_processor);
+}
 
 void ImageLoader::check(int status, const std::string &msg) {
   using namespace std;
@@ -56,7 +61,8 @@ ImageLoader::load_image(const std::filesystem::path &image_path) {
 
 ImageInfo::Ptr
 ImageLoader::load_raw_image(const std::filesystem::path &image_path) {
-  configure(m_processor);
+  // Consider adjusting m_processor differently when it appears that a Sony ARW
+  // image is being loaded.
   check(m_processor->open_file(image_path.c_str()), "Could not open file");
   check(m_processor->unpack(), "Could not unpack");
   check(m_processor->dcraw_process(),
