@@ -40,7 +40,7 @@ public:
     // arg_parse needs to provide a choice with defined, valid values.
     m_method = ArgParse::option<std::string>(
         m_parser, "-s", "--stacking-method",
-        "stacking method: one of \"m\" (mean), \"s\" (scaled)");
+        "stacking method: one of \"m\" (mean), \"s\" (scaled).");
     m_chosen_method = "m"; // Default
 
     const std::filesystem::path default_out_path(default_out_pathname);
