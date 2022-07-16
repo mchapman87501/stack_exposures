@@ -80,6 +80,23 @@ add_test(
     COMMAND stack_exposures_cov --no-align -o "pit_unaligned_result.jpg" ${pit_img} ${pit_img} ${pit_img})
 
 add_test(
+    NAME positive_integration_test_method_m
+    COMMAND stack_exposures_cov -o "pit_mm.png" --stacking-method m ${pit_img} ${pit_img})
+
+add_test(
+    NAME positive_integration_test_method_s
+    COMMAND stack_exposures_cov -o "pit_ms.png" -s s ${pit_img} ${pit_img})
+
+add_test(
+    NAME invalid_stacking_method
+    COMMAND stack_exposures_cov -o "ism.png" --stacking-method= ${pit_img} ${pit_img})
+set_tests_properties(
+    invalid_stacking_method
+    PROPERTIES
+    WILL_FAIL true
+    FAIL_REGULAR_EXPRESSION "STACKING_METHOD")
+
+add_test(
     NAME stack_exposures_no_args_given
     COMMAND stack_exposures_cov)
 set_tests_properties(
@@ -107,13 +124,17 @@ set_tests_properties(
     WILL_FAIL true
     FAIL_REGULAR_EXPRESSION "Cannot process")
 
-foreach(suffix IN ITEMS jpg png tif tiff)
-    set(test_name "stack_exposures_suffix_${suffix}")
-    message(STATUS "Test name is ${test_name}")
-    add_test(
-        NAME ${test_name}
-        COMMAND stack_exposures_cov -o "pit_suffix.${suffix}" ${pit_img} ${pit_img}
-    )
+foreach(stacking_method m s)
+    foreach(suffix IN ITEMS jpg png tif tiff)
+        set(test_name "stack_exposures_suffix_${stacking_method}_${suffix}")
+        message(STATUS "Test name is ${test_name}")
+        add_test(
+            NAME ${test_name}
+            COMMAND
+            stack_exposures_cov --stacking-method=${stacking_method}
+            -o "pit_suffix.${suffix}" ${pit_img} ${pit_img}
+        )
+    endforeach()
 endforeach()
 
 setup_target_for_coverage_lcov(NAME coverage_report

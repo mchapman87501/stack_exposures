@@ -28,7 +28,8 @@ set(STACK_EXP_SRC
     src/image_aligner.cpp
     src/image_info.cpp
     src/image_stacker.cpp
-    src/mean_image_stacker.cpp)
+    src/mean_image_stacker.cpp
+    src/str_util.cpp)
 
 add_library(stack_exp STATIC ${STACK_EXP_SRC})
 target_compile_features(stack_exp PUBLIC cxx_std_20)

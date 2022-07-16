@@ -39,8 +39,6 @@ struct ImageStackerImpl : public ImageStacker {
     return converted(m_image, 65535.0, CV_16UC3);
   }
 
-  cv::Mat resultf() const override { return converted(m_image, 1.0, CV_32FC3); }
-
 private:
   size_t m_width;
   size_t m_height;

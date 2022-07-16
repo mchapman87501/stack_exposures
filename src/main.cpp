@@ -12,6 +12,7 @@
 #include "image_loader.hpp"
 #include "image_stacker.hpp"
 #include "mean_image_stacker.hpp"
+#include "str_util.hpp"
 
 using namespace StackExposures;
 
@@ -23,8 +24,11 @@ static const std::string default_out_pathname("stacked.tiff");
 class CmdOption {
   ArgParse::ArgumentParser::Ptr m_parser;
   ArgParse::Flag::Ptr m_no_align;
+  ArgParse::Option<std::string>::Ptr m_method;
   ArgParse::Option<std::filesystem::path>::Ptr m_output_path;
   ArgParse::Argument<std::filesystem::path>::Ptr m_input_images;
+
+  std::string m_chosen_method;
 
 public:
   CmdOption(int argc, char **argv) {
@@ -32,6 +36,12 @@ public:
         ArgParse::ArgumentParser::create("Stack images into a single image.");
     m_no_align = ArgParse::flag(m_parser, "--no-align", "--no-align",
                                 "Skip aligning images before stacking.");
+
+    // arg_parse needs to provide a choice with defined, valid values.
+    m_method = ArgParse::option<std::string>(
+        m_parser, "-s", "--stacking-method",
+        "stacking method: one of \"m\" (mean), \"s\" (scaled)");
+    m_chosen_method = "m"; // Default
 
     const std::filesystem::path default_out_path(default_out_pathname);
     const auto outpath_help =
@@ -43,6 +53,20 @@ public:
         m_parser, "image", ArgParse::Nargs::one_or_more, "Stack these images.");
 
     m_parser->parse_args(argc, argv);
+
+    // argparse needs to support case-insensitive choice options.
+    if (!m_method->value().empty()) {
+      auto method = StrUtil::lowercase(m_method->value());
+
+      if ((method != "m") && (method != "s")) {
+        std::ostringstream outs;
+        outs << "Invalid valud for STACKING_METHOD: \"" << m_method->value()
+             << "\"";
+        m_parser->show_error(outs.str(), 1);
+      } else {
+        m_chosen_method = method;
+      }
+    }
   }
 
   bool should_exit() const { return m_parser->should_exit(); }
@@ -52,6 +76,8 @@ public:
   auto images() const { return m_input_images->values(); }
 
   bool align() const { return !m_no_align->is_set(); }
+
+  std::string method() const { return m_chosen_method; }
 
   std::string const output_pathname() {
     return (m_output_path->value().empty()) ? default_out_pathname
@@ -90,6 +116,16 @@ void report_size_mismatch(ImageInfo::Ptr ref_img, ImageInfo::Ptr img_info) {
             << ref_img->cols() << " x " << ref_img->rows() << ")" << std::endl;
 }
 
+IImageStacker::Ptr image_stacker(std::string_view method_id) {
+  if (method_id == "m") {
+    return MeanImageStacker::create();
+  }
+  if (method_id == "s") {
+    return ImageStacker::create();
+  }
+  throw std::runtime_error("Unsupported STACKING_METHOD");
+}
+
 std::string filename_suffix(std::string_view filename) {
   auto index = filename.find_last_of('.');
   if (index != std::string::npos) {
@@ -98,16 +134,9 @@ std::string filename_suffix(std::string_view filename) {
   return "";
 }
 
-auto lowercase(std::string_view sval) {
-  std::string result(sval);
-  std::transform(result.begin(), result.end(), result.begin(),
-                 [](unsigned char c) { return std::tolower(c); });
-  return result;
-}
-
 auto stacked_result(const IImageStacker::Ptr stacker,
                     std::string_view filename) {
-  auto suffix = lowercase(filename_suffix(filename));
+  auto suffix = StrUtil::lowercase(filename_suffix(filename));
   if ((suffix == ".tiff") || (suffix == ".tif")) {
     return stacker->result16();
   }
@@ -130,7 +159,7 @@ int main(int argc, char *argv[]) {
   }
 
   ImageAligner aligner;
-  IImageStacker::Ptr stacker = ImageStacker::create();
+  IImageStacker::Ptr stacker = image_stacker(opt.method());
 
   ImageInfo::Ptr ref_img(nullptr);
 

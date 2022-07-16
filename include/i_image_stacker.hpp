@@ -30,12 +30,5 @@ struct IImageStacker {
    * @return cv::Mat A 16-bit, 3-channel image
    */
   virtual cv::Mat result16() const = 0;
-
-  /**
-   * @brief Get the stacked composite image.
-   *
-   * @return cv::Mat A 64-bit, floating point, 3-channel image
-   */
-  virtual cv::Mat resultf() const = 0;
 };
 } // namespace StackExposures

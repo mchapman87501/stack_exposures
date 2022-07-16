@@ -40,8 +40,6 @@ struct MeanImageStackerImpl : public MeanImageStacker {
     return converted(m_image, 0xFFFF, CV_16UC3);
   }
 
-  cv::Mat resultf() const override { return converted(m_image, 1.0, CV_32FC3); }
-
 protected:
   // TODO extract these to a distinct class to ease unit testing.
 
@@ -63,12 +61,6 @@ protected:
     switch (depth) {
     case CV_8U:
       return 1.0 / double(0xFF);
-    case CV_8S:
-      return 1.0 / double(0x7F);
-    case CV_16U:
-      return 1.0 / double(0xFFFF);
-    case CV_16S:
-      return 1.0 / double(0x7FFF);
     }
     std::cerr << "DEBUG: Input is unknown bit-depth" << std::endl;
     return 1.0;
