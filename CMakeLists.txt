@@ -22,6 +22,8 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(arg_parse)
 
 include(cmake_modules/CodeCoverage.cmake)
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
 
 set(STACK_EXP_SRC
     src/image_loader.cpp
@@ -34,16 +36,37 @@ set(STACK_EXP_SRC
 add_library(stack_exp STATIC ${STACK_EXP_SRC})
 target_compile_features(stack_exp PUBLIC cxx_std_20)
 target_include_directories(stack_exp
-    PUBLIC include
-    PRIVATE ${OpenCV_INCLUDE_DIRS} ${LibRaw_INCLUDE_DIR})
+    PRIVATE include ${OpenCV_INCLUDE_DIRS} ${LibRaw_INCLUDE_DIR})
 target_link_libraries(stack_exp PRIVATE ${OpenCV_LIBS} ${LibRaw_LIBRARIES})
+
+# https://gitlab.kitware.com/cmake/community/-/wikis/doc/cmake/RPATH-handling#always-full-rpath
+set(CMAKE_SKIP_BUILD_RPATH FALSE)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+message(STATUS "CMAKE_INSTALL_PREFIX is ${CMAKE_INSTALL_PREFIX}")
+
+# the RPATH to be used when installing, but only if it's not a system directory
+list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
+
+if("${isSystemDir}" STREQUAL "-1")
+    set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+endif("${isSystemDir}" STREQUAL "-1")
 
 add_executable(stack_exposures src/main.cpp)
 target_compile_features(stack_exposures PUBLIC cxx_std_20)
 target_include_directories(stack_exposures
-    PUBLIC include
-    PRIVATE ${arg_parse_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${LibRaw_INCLUDE_DIR})
-target_link_libraries(stack_exposures PUBLIC stack_exp PRIVATE arg_parse::arg_parse ${OpenCV_LIBS} ${LibRaw_LIBRARIES})
+    PRIVATE include ${arg_parse_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${LibRaw_INCLUDE_DIR})
+target_link_libraries(stack_exposures
+    PUBLIC stack_exp
+    PRIVATE arg_parse::arg_parse ${OpenCV_LIBS} ${LibRaw_LIBRARIES})
+install(
+    TARGETS stack_exposures
+    EXPORT stack_exposure_targets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
 
 find_package(Catch2 3 REQUIRED)
 enable_testing()

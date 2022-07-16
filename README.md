@@ -37,10 +37,8 @@ sh ./docker_scripts/on_host/build_stack_exposures.sh
 
 # If the above steps complete successfully,
 # you should find a 'stack_exposures' executable in 
-# './build_artifacts'.
+# './build_artifacts/local'.
 ```
-
-
 
 ## Running Tests
 
@@ -64,6 +62,30 @@ sh ./docker_scripts/on_host/run_tests.sh
 open ./build_artifacts/coverage_report/index.html
 ```
 
+## Installing
+
+It's expected that `stack_exposures` will be built from source, and run from where it's built.  That said, you can install it (with some pain) as outlined below.
+### On Host
+
+You can install using `cmake --install .`.  In order for the installed executable to find required libraries at runtime, you'll need to specify the installation directory at configuration time.
+
+```shell
+mkdir -p build/release
+cd build/release
+
+INSTALL_DIR=/where/to/install
+cmake -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+      -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
+      ../..
+cmake --build .
+cmake --install .
+${INSTALL_DIR}/bin/stack_exposures --help
+```
+
+### Using Docker
+
+After building using the "Compile and Run" instructions for docker, as outlined above, you can copy the `.../bin/stack_exposures` and `.../lib/libparg_parse.so*` artifacts from the `build_artifacts` directory to wherever you want to install them.  In order to use the executable you'll need to point the `LD_LIBRARY_PATH` environment variable to wherever you installed the `libarg_parse.so*` libraries.
 ## Formatting with clang-format
 
 If you have both [clang-format](https://clang.llvm.org/docs/ClangFormat.html) and [fd](https://github.com/sharkdp/fd.git) (an alternative to `find`) on your PATH:
