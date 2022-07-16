@@ -5,6 +5,26 @@
 #include <opencv2/imgcodecs.hpp>
 
 namespace StackExposures {
+namespace {
+void configure(LibRawPtr processor) {
+  // Adjust processing of raw images.
+  processor->imgdata.params.use_camera_wb = 1;
+  //   processor->imgdata.params.output_bps = -4; // 16-bit.
+
+  // Use sRGB gamma curve.  See gamm[6] at
+  // https://www.libraw.org/docs/API-datastruct.html#libraw_output_params_t
+  processor->imgdata.params.gamm[0] = 1.0 / 2.4;
+  processor->imgdata.params.gamm[1] = 12.92;
+  processor->imgdata.params.no_auto_bright = 1;
+
+  // TODO - ARW-specific parameters, e.g., to suppress posterization
+  // in shadows of Sony RAW images.
+  // See https://www.libraw.org/docs/API-datastruct.html#libraw_output_params_t
+  // and search for sony_arw2_posterization_thr
+}
+
+} // namespace
+
 ImageLoader::ImageLoader() : m_processor(std::make_shared<LibRaw>()) {}
 
 void ImageLoader::check(int status, const std::string &msg) {
@@ -36,6 +56,7 @@ ImageLoader::load_image(const std::filesystem::path &image_path) {
 
 ImageInfo::Ptr
 ImageLoader::load_raw_image(const std::filesystem::path &image_path) {
+  configure(m_processor);
   check(m_processor->open_file(image_path.c_str()), "Could not open file");
   check(m_processor->unpack(), "Could not unpack");
   check(m_processor->dcraw_process(),
