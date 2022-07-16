@@ -11,6 +11,7 @@
 #include "image_aligner.hpp"
 #include "image_loader.hpp"
 #include "image_stacker.hpp"
+#include "mean_image_stacker.hpp"
 
 using namespace StackExposures;
 
@@ -104,20 +105,21 @@ auto lowercase(std::string_view sval) {
   return result;
 }
 
-auto stacked_result(const ImageStacker &stacker, std::string_view filename) {
+auto stacked_result(const IImageStacker::Ptr stacker,
+                    std::string_view filename) {
   auto suffix = lowercase(filename_suffix(filename));
   if ((suffix == ".tiff") || (suffix == ".tif")) {
-    return stacker.result16();
+    return stacker->result16();
   }
   if (suffix == ".png") {
-    return stacker.result16();
+    return stacker->result16();
   }
   if (suffix == ".jpg") {
-    return stacker.result8();
+    return stacker->result8();
   }
   // TODO HDR
   // Play it safe.
-  return stacker.result8();
+  return stacker->result8();
 }
 } // namespace
 
@@ -128,7 +130,7 @@ int main(int argc, char *argv[]) {
   }
 
   ImageAligner aligner;
-  ImageStacker stacker;
+  IImageStacker::Ptr stacker = MeanImageStacker::create();
 
   ImageInfo::Ptr ref_img(nullptr);
 
@@ -140,13 +142,13 @@ int main(int argc, char *argv[]) {
     if (!ref_img) {
       // TODO get the icc profile from the first image.
       ref_img = img_info;
-      stacker.push(img_info->image());
+      stacker->push(img_info->image());
     } else {
       if (!ref_img->same_extents(img_info)) {
         report_size_mismatch(ref_img, img_info);
       } else {
         auto aligned = opt.align() ? aligner.align(img_info) : img_info;
-        stacker.push(aligned->image());
+        stacker->push(aligned->image());
       }
     }
   }

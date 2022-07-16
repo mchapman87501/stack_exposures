@@ -41,6 +41,7 @@ ImageLoader::load_raw_image(const std::filesystem::path &image_path) {
   check(m_processor->dcraw_process(),
         "dcraw_process"); // This is what Rawpy uses.
 
+  // Can LibRaw do the right thing with raw images having > 10 bits / channel?
   int status = 0;
   libraw_processed_image_t *img = m_processor->dcraw_make_mem_image(&status);
   check(status, "dcraw_make_mem_image");

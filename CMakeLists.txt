@@ -27,7 +27,8 @@ set(STACK_EXP_SRC
     src/image_loader.cpp
     src/image_aligner.cpp
     src/image_info.cpp
-    src/image_stacker.cpp)
+    src/image_stacker.cpp
+    src/mean_image_stacker.cpp)
 
 add_library(stack_exp STATIC ${STACK_EXP_SRC})
 target_compile_features(stack_exp PUBLIC cxx_std_20)
@@ -42,7 +43,6 @@ target_include_directories(stack_exposures
     PUBLIC include
     PRIVATE ${arg_parse_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${LibRaw_INCLUDE_DIR})
 target_link_libraries(stack_exposures PUBLIC stack_exp PRIVATE arg_parse::arg_parse ${OpenCV_LIBS} ${LibRaw_LIBRARIES})
-
 
 find_package(Catch2 3 REQUIRED)
 enable_testing()

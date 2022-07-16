@@ -3,8 +3,8 @@
 #include "i_image_stacker.hpp"
 
 namespace StackExposures {
-struct ImageStacker : public IImageStacker {
-  using Ptr = std::shared_ptr<ImageStacker>;
+struct MeanImageStacker : public IImageStacker {
+  using Ptr = std::shared_ptr<MeanImageStacker>;
 
   static Ptr create();
 };

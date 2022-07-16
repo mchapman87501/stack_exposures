@@ -1,14 +1,9 @@
 #pragma once
 
-#include <filesystem>
-#include <memory>
-
 #include "image_info.hpp"
-#include "shared_ptrs.hpp"
 
 namespace StackExposures {
-class ImageAligner {
-public:
+struct ImageAligner {
   ImageAligner();
 
   /**
