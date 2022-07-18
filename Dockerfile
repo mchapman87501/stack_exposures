@@ -22,4 +22,4 @@ USER mchapman
 WORKDIR /home/mchapman
 
 ENTRYPOINT ["/bin/bash"]
-CMD ["/source/docker_scripts/in_container/build.sh"]
+CMD ["/source/scripts/docker/in_container/build.sh"]

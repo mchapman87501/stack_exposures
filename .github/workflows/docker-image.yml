@@ -49,7 +49,7 @@ jobs:
     -
       name: Run coverage tests
       run: |
-        docker run --rm -v${PWD}:/source --user root ${{ env.img_name_tag }} "/source/docker_scripts/in_container/test.sh"
+        docker run --rm -v${PWD}:/source --user root ${{ env.img_name_tag }} "/source/scripts/docker/in_container/test.sh"
     -
       name: Archive artifacts
       uses: actions/upload-artifact@v3
