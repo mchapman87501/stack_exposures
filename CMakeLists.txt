@@ -17,7 +17,7 @@ include(FetchContent)
 FetchContent_Declare(
     arg_parse
     GIT_REPOSITORY https://github.com/mchapman87501/arg_parse.git
-    GIT_TAG 3b197a7f15fcf8799120926171d9bbc525c7b45c
+    GIT_TAG b47a9507f62cf585a02e82aa0e3700b54b74e658
 )
 FetchContent_MakeAvailable(arg_parse)
 

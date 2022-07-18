@@ -38,10 +38,10 @@ public:
     m_no_align = ArgParse::flag(m_parser, "--no-align", "--no-align",
                                 "Skip aligning images before stacking.");
 
-    // arg_parse needs to provide a choice with defined, valid values.
-    m_method = ArgParse::option<std::string>(
-        m_parser, "-s", "--stacking-method",
-        "stacking method: one of \"m\" (mean), \"s\" (scaled).");
+    // arg_parse option and choice need to support default values.
+    m_method = ArgParse::choice(m_parser, "-s", "--stacking-method",
+                                "stacking method: 'm' == mean, 's' == scaled.",
+                                {"m", "s"});
     m_chosen_method = "m"; // Default
 
     m_dark_image = ArgParse::option<std::filesystem::path>(
@@ -59,18 +59,8 @@ public:
 
     m_parser->parse_args(argc, argv);
 
-    // argparse needs to support case-insensitive choice options.
     if (!m_method->value().empty()) {
-      auto method = StrUtil::lowercase(m_method->value());
-
-      if ((method != "m") && (method != "s")) {
-        std::ostringstream outs;
-        outs << "Invalid valud for STACKING_METHOD: \"" << m_method->value()
-             << "\"";
-        m_parser->show_error(outs.str(), 1);
-      } else {
-        m_chosen_method = method;
-      }
+      m_chosen_method = m_method->value();
     }
   }
 
