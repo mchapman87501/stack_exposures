@@ -8,9 +8,9 @@ namespace StackExposures {
 
 namespace {
 struct ImageStackerImpl : public ImageStacker {
-  ImageStackerImpl() : m_width(0), m_height(0), m_image() {}
+  ImageStackerImpl() : m_width(0), m_height(0), m_image(), m_dark_image() {}
 
-  void push(const cv::Mat &new_image) override {
+  void add(const cv::Mat &new_image) override {
     const size_t w_new(new_image.cols);
     const size_t h_new(new_image.rows);
 
@@ -20,14 +20,17 @@ struct ImageStackerImpl : public ImageStacker {
       m_image = cv::Mat(m_height, m_width, CV_32FC3);
     }
     // new_image must be the same size...
-    if ((w_new == m_width) && (h_new == m_height)) {
+    if (check_size(new_image, "image")) {
       cv::Mat sum;
       cv::add(m_image, new_image, sum, cv::noArray(), CV_32FC3);
       m_image = sum;
-    } else {
-      std::cerr << "Cannot push image of (width x height) "
-                << "(" << w_new << " x " << h_new << ") onto a stack of size "
-                << "(" << m_width << " x " << m_height << ")." << std::endl;
+    }
+  }
+
+  void subtract(const cv::Mat &new_image) override {
+    // Should this be a last-one-wins?
+    if (m_dark_image.empty()) {
+      new_image.convertTo(m_dark_image, CV_32FC3);
     }
   }
 
@@ -44,6 +47,19 @@ private:
   size_t m_height;
   cv::Mat m_image;
 
+  cv::Mat m_dark_image;
+
+  bool check_size(const cv::Mat &new_image, std::string_view descr) const {
+    if ((new_image.cols != m_width) || (new_image.rows != m_height)) {
+      std::cerr << descr << " (width x height) "
+                << "(" << new_image.cols << " x " << new_image.rows
+                << ")  is incompatible with established size "
+                << "(" << m_width << " x " << m_height << ")." << std::endl;
+      return false;
+    }
+    return true;
+  }
+
   std::pair<double, double> value_range(const cv::Mat &image) const {
     cv::Mat gray;
     cv::cvtColor(image, gray, cv::COLOR_BGR2GRAY);
@@ -55,22 +71,31 @@ private:
   }
 
   cv::Mat converted(const cv::Mat &image, double max_out,
-                    auto cv_img_format) const {
-    cv::Mat result;
+                    int cv_img_format) const {
+    cv::Mat darkened = subtracting_dark_image(image);
 
-    const auto v_extrema = value_range(image);
+    const auto v_extrema = value_range(darkened);
     const double min_val = v_extrema.first;
     const double max_val = v_extrema.second;
 
     const double dval = max_val - min_val;
     const double alpha = (dval > 0.0) ? (max_out / dval) : 1.0;
+
+    cv::Mat result;
     // Beta offset is applied after scaling by alpha, hence multiplication by
     // alpha.
     const double beta = -min_val * alpha;
-    image.convertTo(result, cv_img_format, alpha, beta);
-    // No need for colorspace conversion.  Only data type conversion
-    // (scaling, offset) was needed.
+    darkened.convertTo(result, cv_img_format, alpha, beta);
     return result;
+  }
+
+  cv::Mat subtracting_dark_image(const cv::Mat &src) const {
+    if (!m_dark_image.empty() && check_size(m_dark_image, "dark image")) {
+      cv::Mat result;
+      cv::subtract(src, m_dark_image, result);
+      return result;
+    }
+    return src;
   }
 };
 

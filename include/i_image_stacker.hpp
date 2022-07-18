@@ -8,14 +8,21 @@ struct IImageStacker {
   using Ptr = std::shared_ptr<IImageStacker>;
 
   /**
-   * @brief Push a new image onto the stack.
+   * @brief Add a new image to the exposure.
    *
    * @details If the dimensions of the new image do not match the rest of the
-   * stack, the image will not be stacked.
+   * stack, the image will not be added.
    *
-   * @param[in]  new_image  The image to be stacked up.
+   * @param[in]  new_image  The image to be added.
    */
-  virtual void push(const cv::Mat &new_image) = 0;
+  virtual void add(const cv::Mat &new_image) = 0;
+
+  /**
+   * @brief      Subtract an image -- e.g., a dark frame -- from the stack.
+   *
+   * @param[in]  new_image  The image to be subtracted.
+   */
+  virtual void subtract(const cv::Mat &new_image) = 0;
 
   /**
    * @brief Get the stacked composite image.

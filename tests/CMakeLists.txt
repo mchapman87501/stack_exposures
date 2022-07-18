@@ -137,6 +137,19 @@ foreach(stacking_method m s)
     endforeach()
 endforeach()
 
+# This is ridiculous.  It should produce black images but doesn't verify as much.
+# It merely verifies that "-d <dark_image>" is valid usage.
+foreach (stacking_method m s)
+    add_test(
+        NAME stack_exposures_darken_${stacking_method}
+        COMMAND
+            stack_exposures_cov
+            -s ${stacking_method}
+            -o "darken_${stacking_method}.png"
+            -d ${pit_img}
+            ${pit_img} ${pit_img})
+endforeach()
+
 setup_target_for_coverage_lcov(NAME coverage_report
     EXECUTABLE ctest
     DEPENDENCIES

@@ -26,6 +26,7 @@ class CmdOption {
   ArgParse::Flag::Ptr m_no_align;
   ArgParse::Option<std::string>::Ptr m_method;
   ArgParse::Option<std::filesystem::path>::Ptr m_output_path;
+  ArgParse::Option<std::filesystem::path>::Ptr m_dark_image;
   ArgParse::Argument<std::filesystem::path>::Ptr m_input_images;
 
   std::string m_chosen_method;
@@ -42,6 +43,10 @@ public:
         m_parser, "-s", "--stacking-method",
         "stacking method: one of \"m\" (mean), \"s\" (scaled).");
     m_chosen_method = "m"; // Default
+
+    m_dark_image = ArgParse::option<std::filesystem::path>(
+        m_parser, "-d", "--dark-image",
+        "Dark image to be subtracted from the exposure.");
 
     const std::filesystem::path default_out_path(default_out_pathname);
     const auto outpath_help =
@@ -72,6 +77,8 @@ public:
   bool should_exit() const { return m_parser->should_exit(); }
 
   int exit_code() const { return m_parser->exit_code(); }
+
+  auto dark_image() const { return m_dark_image->value(); }
 
   auto images() const { return m_input_images->values(); }
 
@@ -169,17 +176,21 @@ int main(int argc, char *argv[]) {
     std::cout << img_info->path() << std::endl << std::flush;
 
     if (!ref_img) {
-      // TODO get the icc profile from the first image.
       ref_img = img_info;
-      stacker->push(img_info->image());
-    } else {
-      if (!ref_img->same_extents(img_info)) {
-        report_size_mismatch(ref_img, img_info);
-      } else {
-        auto aligned = opt.align() ? aligner.align(img_info) : img_info;
-        stacker->push(aligned->image());
-      }
     }
+
+    if (ref_img->same_extents(img_info)) {
+      auto aligned = opt.align() ? aligner.align(img_info) : img_info;
+      stacker->add(aligned->image());
+    } else {
+      report_size_mismatch(ref_img, img_info);
+    }
+  }
+
+  if (!opt.dark_image().empty()) {
+    ImageLoader loader;
+    auto dark_image = loader.load_image(opt.dark_image());
+    stacker->subtract(dark_image->image());
   }
 
   const auto output_pathname(opt.output_pathname());
