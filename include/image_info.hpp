@@ -37,6 +37,11 @@ struct ImageInfo {
    */
   ImageInfo(const ImageInfo &src, cv::Mat &image);
 
+  ImageInfo(const ImageInfo &src) = delete;
+  ImageInfo(ImageInfo &&src) = delete;
+  ImageInfo &operator=(const ImageInfo &src) = delete;
+  ImageInfo &operator=(ImageInfo &&src) = delete;
+
   /**
    * @brief      Get the pathname associated with this image.
    *

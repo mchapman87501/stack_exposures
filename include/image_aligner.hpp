@@ -4,8 +4,6 @@
 
 namespace StackExposures {
 struct ImageAligner {
-  ImageAligner();
-
   /**
    * @brief Align an image to all other images aligned so far.
    *

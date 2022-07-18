@@ -15,7 +15,6 @@ using namespace StackExposures;
 } // namespace
 
 namespace StackExposures {
-ImageAligner::ImageAligner() {}
 
 ImageInfo::Ptr ImageAligner::align(ImageInfo::Ptr image) {
   if (!m_ref_img) {
