@@ -27,7 +27,7 @@ auto ctor2() {
   unsigned int colors = 3; // RGB
   unsigned int bytes_per_sample = 1;
   unsigned int dummy_data_size = (width * bytes_per_sample * colors) * height;
-  libraw_processed_image_t *dummy = (libraw_processed_image_t *)::malloc(
+  auto *dummy = (libraw_processed_image_t *)::malloc(
       sizeof(libraw_processed_image_t) + dummy_data_size);
   dummy->height = height;
   dummy->width = width;

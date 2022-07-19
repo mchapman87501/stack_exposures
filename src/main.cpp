@@ -64,17 +64,17 @@ public:
     }
   }
 
-  bool should_exit() const { return m_parser->should_exit(); }
+  [[nodiscard]] bool should_exit() const { return m_parser->should_exit(); }
 
-  int exit_code() const { return m_parser->exit_code(); }
+  [[nodiscard]] int exit_code() const { return m_parser->exit_code(); }
 
-  auto dark_image() const { return m_dark_image->value(); }
+  [[nodiscard]] auto dark_image() const { return m_dark_image->value(); }
 
-  auto images() const { return m_input_images->values(); }
+  [[nodiscard]] auto images() const { return m_input_images->values(); }
 
-  bool align() const { return !m_no_align->is_set(); }
+  [[nodiscard]] bool align() const { return !m_no_align->is_set(); }
 
-  std::string method() const { return m_chosen_method; }
+  [[nodiscard]] std::string method() const { return m_chosen_method; }
 
   std::string const output_pathname() {
     return (m_output_path->value().empty()) ? default_out_pathname
@@ -94,7 +94,7 @@ struct AsyncImageLoader {
         return result;
       };
 
-      m_futures.push_back(std::async(std::launch::async, load_async));
+      m_futures.emplace_back(std::async(std::launch::async, load_async));
     }
   }
 

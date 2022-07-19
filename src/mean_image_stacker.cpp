@@ -1,6 +1,7 @@
 #include "mean_image_stacker.hpp"
 #include <iostream>
 
+#include <memory>
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 
@@ -9,7 +10,7 @@ namespace StackExposures {
 namespace {
 struct MeanImageStackerImpl : public MeanImageStacker {
   MeanImageStackerImpl()
-      : m_width(0), m_height(0), m_count(0), m_image(), m_dark_image() {}
+      :  m_image(), m_dark_image() {}
 
   void add(const cv::Mat &new_image) override {
     if ((m_width == 0) && (m_height == 0)) {
@@ -33,20 +34,20 @@ struct MeanImageStackerImpl : public MeanImageStacker {
     }
   }
 
-  cv::Mat result8() const override { return converted(1, CV_8UC3); }
+  [[nodiscard]] cv::Mat result8() const override { return converted(1, CV_8UC3); }
 
-  cv::Mat result16() const override { return converted(0xFF, CV_16UC3); }
+  [[nodiscard]] cv::Mat result16() const override { return converted(0xFF, CV_16UC3); }
 
 private:
-  size_t m_width;
-  size_t m_height;
+  size_t m_width{0};
+  size_t m_height{0};
 
-  size_t m_count;
+  size_t m_count{0};
 
   cv::Mat m_image;
   cv::Mat m_dark_image;
 
-  bool check_size(const cv::Mat &new_image, std::string_view descr) const {
+  [[nodiscard]] bool check_size(const cv::Mat &new_image, std::string_view descr) const {
     if ((new_image.cols != m_width) || (new_image.rows != m_height)) {
       std::cerr << descr << " (width x height) "
                 << "(" << new_image.cols << " x " << new_image.rows
@@ -57,7 +58,7 @@ private:
     return true;
   }
 
-  cv::Mat converted(size_t scale, int cv_img_format) const {
+  [[nodiscard]] cv::Mat converted(size_t scale, int cv_img_format) const {
     if (0 == m_count) {
       // No images were added.
       return m_image;
@@ -89,7 +90,7 @@ private:
 } // namespace
 
 MeanImageStacker::Ptr MeanImageStacker::create() {
-  return std::shared_ptr<MeanImageStackerImpl>(new MeanImageStackerImpl());
+  return std::make_shared<MeanImageStackerImpl>();
 }
 
 } // namespace StackExposures

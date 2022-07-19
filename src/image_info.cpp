@@ -2,15 +2,16 @@
 
 #include <iostream>
 #include <opencv2/imgproc.hpp>
+#include <utility>
 
 namespace StackExposures {
 
-ImageInfo::ImageInfo(const std::filesystem::path &path, cv::Mat &image)
-    : m_path(path), m_raw_img(nullptr), m_image(image) {}
+ImageInfo::ImageInfo(std::filesystem::path path, cv::Mat &image)
+    : m_path(std::move(path)), m_raw_img(nullptr), m_image(image) {}
 
-ImageInfo::ImageInfo(LibRawPtr processor, const std::filesystem::path &path,
+ImageInfo::ImageInfo(LibRawPtr processor, std::filesystem::path path,
                      libraw_processed_image_t *raw_img)
-    : m_path(path),
+    : m_path(std::move(path)),
       m_raw_img(LibRawProcessedImagePtr(
           raw_img, [processor](auto p) { processor->dcraw_clear_mem(p); })) {
   int h = m_raw_img->height;

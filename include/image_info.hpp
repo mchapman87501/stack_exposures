@@ -17,7 +17,7 @@ struct ImageInfo {
    * @param[in]  path   Path of the image file
    * @param      image  OpenCV image data for the image
    */
-  ImageInfo(const std::filesystem::path &path, cv::Mat &image);
+  ImageInfo(std::filesystem::path path, cv::Mat &image);
 
   /**
    * @brief      Constructs a new instance.
@@ -26,7 +26,7 @@ struct ImageInfo {
    * @param[in]  path       Path from which raw_img was loaded
    * @param      raw_img    Libraw's representation of the image
    */
-  ImageInfo(LibRawPtr processor, const std::filesystem::path &path,
+  ImageInfo(LibRawPtr processor, std::filesystem::path path,
             libraw_processed_image_t *raw_img);
 
   /**
