@@ -5,7 +5,9 @@
 
 namespace StackExposures {
 struct IImageStacker {
-  using Ptr = std::shared_ptr<IImageStacker>;
+  using Ptr = std::unique_ptr<IImageStacker>;
+
+  virtual ~IImageStacker() = default;
 
   /**
    * @brief Add a new image to the exposure.

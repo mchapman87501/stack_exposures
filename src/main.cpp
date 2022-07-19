@@ -17,7 +17,7 @@
 using namespace StackExposures;
 
 namespace {
-using ImageInfoFuture = std::shared_future<ImageInfo::Ptr>;
+using ImageInfoFuture = std::shared_future<ImageInfo::SharedPtr>;
 
 static const std::string default_out_pathname("stacked.tiff");
 
@@ -106,7 +106,8 @@ private:
   std::deque<ImageInfoFuture> m_futures;
 };
 
-void report_size_mismatch(ImageInfo::Ptr ref_img, ImageInfo::Ptr img_info) {
+void report_size_mismatch(ImageInfo::SharedPtr ref_img,
+                          ImageInfo::SharedPtr img_info) {
   std::cerr << "Cannot process " << img_info->path()
             << ": image width x height (" << img_info->cols() << " x "
             << img_info->rows() << ") do not match first image ("
@@ -131,7 +132,7 @@ std::string filename_suffix(std::string_view filename) {
   return "";
 }
 
-auto stacked_result(const IImageStacker::Ptr stacker,
+auto stacked_result(const IImageStacker::Ptr &stacker,
                     std::string_view filename) {
   auto suffix = StrUtil::lowercase(filename_suffix(filename));
   if ((suffix == ".tiff") || (suffix == ".tif")) {
@@ -158,11 +159,11 @@ int main(int argc, char *argv[]) {
   ImageAligner aligner;
   IImageStacker::Ptr stacker = image_stacker(opt.method());
 
-  ImageInfo::Ptr ref_img(nullptr);
+  ImageInfo::SharedPtr ref_img(nullptr);
 
   AsyncImageLoader loader(opt.images());
   for (auto fut : loader.futures()) {
-    ImageInfo::Ptr img_info = fut.get();
+    ImageInfo::SharedPtr img_info = fut.get();
     std::cout << img_info->path() << std::endl << std::flush;
 
     if (!ref_img) {

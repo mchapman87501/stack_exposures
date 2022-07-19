@@ -4,8 +4,9 @@
 
 namespace StackExposures {
 struct MeanImageStacker : public IImageStacker {
-  using Ptr = std::shared_ptr<MeanImageStacker>;
+  using Ptr = std::unique_ptr<MeanImageStacker>;
 
   static Ptr create();
+  virtual ~MeanImageStacker() = default;
 };
 } // namespace StackExposures

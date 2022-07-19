@@ -9,8 +9,7 @@ namespace StackExposures {
 
 namespace {
 struct ImageStackerImpl : public ImageStacker {
-  ImageStackerImpl()
-      :  m_image(), m_dark_image() {}
+  ImageStackerImpl() : m_image(), m_dark_image() {}
 
   void add(const cv::Mat &new_image) override {
     if ((m_width == 0) && (m_height == 0)) {
@@ -32,9 +31,13 @@ struct ImageStackerImpl : public ImageStacker {
     }
   }
 
-  [[nodiscard]] cv::Mat result8() const override { return converted(1, CV_8UC3); }
+  [[nodiscard]] cv::Mat result8() const override {
+    return converted(1, CV_8UC3);
+  }
 
-  [[nodiscard]] cv::Mat result16() const override { return converted(0xFF, CV_16UC3); }
+  [[nodiscard]] cv::Mat result16() const override {
+    return converted(0xFF, CV_16UC3);
+  }
 
 private:
   size_t m_width{0};
@@ -45,7 +48,8 @@ private:
   cv::Mat m_image;
   cv::Mat m_dark_image;
 
-  [[nodiscard]] bool check_size(const cv::Mat &new_image, std::string_view descr) const {
+  [[nodiscard]] bool check_size(const cv::Mat &new_image,
+                                std::string_view descr) const {
     if ((new_image.cols != m_width) || (new_image.rows != m_height)) {
       std::cerr << descr << " (width x height) "
                 << "(" << new_image.cols << " x " << new_image.rows
@@ -124,7 +128,7 @@ private:
 } // namespace
 
 ImageStacker::Ptr ImageStacker::create() {
-  return std::make_shared<ImageStackerImpl>();
+  return std::make_unique<ImageStackerImpl>();
 }
 
 } // namespace StackExposures

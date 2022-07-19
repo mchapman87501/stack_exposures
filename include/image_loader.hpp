@@ -19,13 +19,13 @@ public:
    * @return     The loaded image, with metadata.  The 'image()' of the return
    * value may be empty in case of error.
    */
-  ImageInfo::Ptr load_image(const std::filesystem::path &image_path);
+  ImageInfo::SharedPtr load_image(const std::filesystem::path &image_path);
 
 private:
-  LibRawPtr m_processor;
+  LibRawSharedPtr m_processor;
 
   void check(int status, const std::string &msg);
 
-  ImageInfo::Ptr load_raw_image(const std::filesystem::path &image_path);
+  ImageInfo::SharedPtr load_raw_image(const std::filesystem::path &image_path);
 };
 } // namespace StackExposures

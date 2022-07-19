@@ -6,7 +6,7 @@
 
 namespace StackExposures {
 namespace {
-void configure(LibRawPtr processor) {
+void configure(LibRawSharedPtr processor) {
   // Adjust processing of raw images.
   // NB: don't muck with bit depth.  Load with default 8-bits / color component,
   // to match cv::imread defaults.
@@ -50,7 +50,7 @@ void ImageLoader::check(int status, const std::string &msg) {
   }
 }
 
-ImageInfo::Ptr
+ImageInfo::SharedPtr
 ImageLoader::load_image(const std::filesystem::path &image_path) {
   cv::Mat image = cv::imread(image_path.c_str());
   if (image.data != nullptr) {
@@ -59,7 +59,7 @@ ImageLoader::load_image(const std::filesystem::path &image_path) {
   return load_raw_image(image_path);
 }
 
-ImageInfo::Ptr
+ImageInfo::SharedPtr
 ImageLoader::load_raw_image(const std::filesystem::path &image_path) {
   // Consider adjusting m_processor differently when it appears that a Sony ARW
   // image is being loaded.
@@ -75,9 +75,7 @@ ImageLoader::load_raw_image(const std::filesystem::path &image_path) {
   assert(img);
   assert(img->type == LIBRAW_IMAGE_BITMAP);
 
-  ImageInfo::Ptr result =
-      std::make_shared<ImageInfo>(m_processor, image_path, img);
-  return result;
+  return std::make_shared<ImageInfo>(m_processor, image_path, img);
 }
 
 } // namespace StackExposures

@@ -16,7 +16,7 @@ using namespace StackExposures;
 
 namespace StackExposures {
 
-ImageInfo::Ptr ImageAligner::align(ImageInfo::Ptr image) {
+ImageInfo::SharedPtr ImageAligner::align(ImageInfo::SharedPtr image) {
   if (!m_ref_img) {
     m_ref_img = image;
   } else {
@@ -36,8 +36,9 @@ ImageInfo::Ptr ImageAligner::align(ImageInfo::Ptr image) {
   return image;
 }
 
-ImageInfo::Ptr ImageAligner::align_internal(ImageInfo::Ptr ref,
-                                            ImageInfo::Ptr to_align) {
+ImageInfo::SharedPtr
+ImageAligner::align_internal(ImageInfo::SharedPtr ref,
+                             ImageInfo::SharedPtr to_align) {
   // See
   // https://docs.opencv.org/4.6.0/dd/d93/samples_2cpp_2image_alignment_8cpp-example.html#a39
 

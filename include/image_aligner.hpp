@@ -13,11 +13,12 @@ struct ImageAligner {
    * @return The aligned image, or in case of processing
    * problems, the original image
    */
-  ImageInfo::Ptr align(ImageInfo::Ptr image);
+  ImageInfo::SharedPtr align(ImageInfo::SharedPtr image);
 
 private:
-  ImageInfo::Ptr m_ref_img = nullptr;
+  ImageInfo::SharedPtr m_ref_img = nullptr;
 
-  ImageInfo::Ptr align_internal(ImageInfo::Ptr ref, ImageInfo::Ptr to_align);
+  ImageInfo::SharedPtr align_internal(ImageInfo::SharedPtr ref,
+                                      ImageInfo::SharedPtr to_align);
 };
 } // namespace StackExposures

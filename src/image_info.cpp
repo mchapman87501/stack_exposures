@@ -9,10 +9,10 @@ namespace StackExposures {
 ImageInfo::ImageInfo(std::filesystem::path path, cv::Mat &image)
     : m_path(std::move(path)), m_raw_img(nullptr), m_image(image) {}
 
-ImageInfo::ImageInfo(LibRawPtr processor, std::filesystem::path path,
+ImageInfo::ImageInfo(LibRawSharedPtr processor, std::filesystem::path path,
                      libraw_processed_image_t *raw_img)
     : m_path(std::move(path)),
-      m_raw_img(LibRawProcessedImagePtr(
+      m_raw_img(LibRawProcessedImageSharedPtr(
           raw_img, [processor](auto p) { processor->dcraw_clear_mem(p); })) {
   int h = m_raw_img->height;
   int w = m_raw_img->width;
@@ -30,7 +30,7 @@ const std::filesystem::path &ImageInfo::path() const { return m_path; }
 
 const cv::Mat &ImageInfo::image() const { return m_image; }
 
-bool ImageInfo::same_extents(ImageInfo::Ptr other_info) const {
+bool ImageInfo::same_extents(ImageInfo::SharedPtr other_info) const {
   const cv::Mat &other(other_info->image());
   return ((m_image.rows == other.rows) && (m_image.cols == other.cols));
 }

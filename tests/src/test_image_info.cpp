@@ -18,7 +18,7 @@ std::filesystem::path ctor2_path("not_a_real_image.rw2");
 auto ctor2() {
   using namespace StackExposures;
 
-  LibRawPtr processor = std::make_shared<LibRaw>();
+  LibRawSharedPtr processor = std::make_shared<LibRaw>();
   // Try to fabricate a processed image that contains no real data, but that
   // will not crash on processor->dcraw_clear_mem. Mimic internal logic of
   // LibRaw::dcraw_make_mem_image.

@@ -9,7 +9,7 @@
 
 namespace StackExposures {
 struct ImageInfo {
-  using Ptr = std::shared_ptr<ImageInfo>;
+  using SharedPtr = std::shared_ptr<ImageInfo>;
 
   /**
    * @brief      Constructs a new instance.
@@ -26,7 +26,7 @@ struct ImageInfo {
    * @param[in]  path       Path from which raw_img was loaded
    * @param      raw_img    Libraw's representation of the image
    */
-  ImageInfo(LibRawPtr processor, std::filesystem::path path,
+  ImageInfo(LibRawSharedPtr processor, std::filesystem::path path,
             libraw_processed_image_t *raw_img);
 
   /**
@@ -57,7 +57,7 @@ struct ImageInfo {
    *
    * @return     true iff this and other_info have the same width and height
    */
-  bool same_extents(ImageInfo::Ptr other_info) const;
+  bool same_extents(ImageInfo::SharedPtr other_info) const;
 
   /**
    * @brief      Get the height (number of rows) of this instance.
@@ -82,7 +82,7 @@ struct ImageInfo {
 
 private:
   const std::filesystem::path m_path;
-  LibRawProcessedImagePtr m_raw_img;
+  LibRawProcessedImageSharedPtr m_raw_img;
   cv::Mat m_image;
 };
 } // namespace StackExposures
