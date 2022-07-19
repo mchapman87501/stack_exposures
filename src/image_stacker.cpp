@@ -65,6 +65,8 @@ protected:
     cv::Mat mean = m_image / m_count;
 
     if (!m_dark_image.empty() && check_size(m_dark_image, "dark image")) {
+      // NB this can result in negative pixel values.
+      // Rely on convertTo to clip to 0.
       return mean - m_dark_image;
     }
     return mean;
@@ -138,9 +140,10 @@ protected:
       cv::Mat new_v_chan =
           out_max * (channels[2] - min_val) / (max_val - min_val);
       channels[2] = new_v_chan;
+      cv::merge(channels, result);
+    } else {
+      result = hsv;
     }
-
-    cv::merge(channels, result);
   }
 };
 
