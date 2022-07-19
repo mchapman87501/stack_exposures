@@ -6,6 +6,22 @@
 
 namespace StackExposures {
 
+ImageInfo::SharedPtr ImageInfo::from_file(std::filesystem::path path,
+                                          cv::Mat &image) {
+  return std::shared_ptr<ImageInfo>(new ImageInfo(path, image));
+}
+
+ImageInfo::SharedPtr
+ImageInfo::from_raw_file(LibRawSharedPtr processor, std::filesystem::path path,
+                         libraw_processed_image_t *raw_img) {
+  return std::shared_ptr<ImageInfo>(new ImageInfo(processor, path, raw_img));
+}
+
+ImageInfo::SharedPtr ImageInfo::with_image(const ImageInfo &src,
+                                           cv::Mat &image) {
+  return std::shared_ptr<ImageInfo>(new ImageInfo(src, image));
+}
+
 ImageInfo::ImageInfo(std::filesystem::path path, cv::Mat &image)
     : m_path(std::move(path)), m_raw_img(nullptr), m_image(image) {}
 

@@ -10,7 +10,7 @@ auto dummy_image(size_t width, size_t height) {
 
   std::filesystem::path path("/no/such/image.jpg");
   cv::Mat img(height, width, CV_8UC3);
-  return std::make_shared<ImageInfo>(path, img);
+  return ImageInfo::from_file(path, img);
 }
 } // namespace
 

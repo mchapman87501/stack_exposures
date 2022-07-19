@@ -54,7 +54,7 @@ ImageInfo::SharedPtr
 ImageLoader::load_image(const std::filesystem::path &image_path) {
   cv::Mat image = cv::imread(image_path.c_str());
   if (image.data != nullptr) {
-    return std::make_shared<ImageInfo>(image_path, image);
+    return ImageInfo::from_file(image_path, image);
   }
   return load_raw_image(image_path);
 }
@@ -75,7 +75,7 @@ ImageLoader::load_raw_image(const std::filesystem::path &image_path) {
   assert(img);
   assert(img->type == LIBRAW_IMAGE_BITMAP);
 
-  return std::make_shared<ImageInfo>(m_processor, image_path, img);
+  return ImageInfo::from_raw_file(m_processor, image_path, img);
 }
 
 } // namespace StackExposures

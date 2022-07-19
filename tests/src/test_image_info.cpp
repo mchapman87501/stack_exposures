@@ -9,7 +9,7 @@ auto ctor1() {
 
   std::filesystem::path path("/no/such/image.jpg");
   cv::Mat img;
-  return std::make_shared<ImageInfo>(path, img);
+  return ImageInfo::from_file(path, img);
 }
 
 // Expect test to run in .../build/tests
@@ -35,14 +35,14 @@ auto ctor2() {
   dummy->bits = bytes_per_sample * 8;
   dummy->data_size = dummy_data_size;
 
-  return std::make_shared<ImageInfo>(processor, ctor2_path, dummy);
+  return ImageInfo::from_raw_file(processor, ctor2_path, dummy);
 }
 
 auto ctor3() {
   using namespace StackExposures;
   auto dummy_img_info(ctor2());
   cv::Mat dummy_image(4, 4, CV_8UC3);
-  return std::make_shared<ImageInfo>(*dummy_img_info, dummy_image);
+  return ImageInfo::with_image(*dummy_img_info, dummy_image);
 }
 } // namespace
 
