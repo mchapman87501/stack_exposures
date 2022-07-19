@@ -31,9 +31,9 @@ struct ImageStackerImpl : public ImageStacker {
     }
   }
 
-  cv::Mat result8() const override { return converted(0xFF, CV_8UC3); }
+  cv::Mat result8() const override { return converted(1, CV_8UC3); }
 
-  cv::Mat result16() const override { return converted(0xFFFF, CV_16UC3); }
+  cv::Mat result16() const override { return converted(0xFF, CV_16UC3); }
 
 private:
   size_t m_width;
@@ -55,7 +55,7 @@ private:
     return true;
   }
 
-  cv::Mat converted(double max_out, int cv_img_format) const {
+  cv::Mat converted(size_t scale, int cv_img_format) const {
     // Goal: Rescale the summed BGR values so that the corresponding
     // hue and saturation are unchanged, but the value extends across 0...Vmax.
 
@@ -64,14 +64,13 @@ private:
       return m_image;
     }
 
-    cv::Mat darkened;
-    subtract_dark_image(m_image, darkened);
+    cv::Mat mean_bgr = m_image / m_count;
 
-    cv::Mat mean_bgr;
-    darkened.convertTo(mean_bgr, darkened.type(), 1.0 / double(m_count));
+    cv::Mat darkened;
+    subtract_dark_image(mean_bgr, darkened);
 
     cv::Mat mean_hsv;
-    cv::cvtColor(mean_bgr, mean_hsv, cv::COLOR_BGR2HSV);
+    cv::cvtColor(darkened, mean_hsv, cv::COLOR_BGR2HSV);
 
     cv::Mat stretched_hsv;
     stretch_hsv_channel(mean_hsv, stretched_hsv);
@@ -79,8 +78,11 @@ private:
     cv::Mat stretched_bgr;
     cv::cvtColor(stretched_hsv, stretched_bgr, cv::COLOR_HSV2BGR);
 
+    cv::Mat rescaled = stretched_bgr * scale;
+
+    // Convert from CV_32FC3 to cv_img_format.
     cv::Mat result;
-    stretched_bgr.convertTo(result, cv_img_format);
+    rescaled.convertTo(result, cv_img_format);
     return result;
   }
 
@@ -88,7 +90,7 @@ private:
     if (!m_dark_image.empty() && check_size(m_dark_image, "dark image")) {
       // Assume each stacked image has the same noise pattern, represented
       // by the dark image.
-      result = src - m_count * m_dark_image;
+      result = src - m_dark_image;
     } else {
       result = src;
     }
@@ -109,12 +111,8 @@ private:
       // appears to be untrue for my images.  Likely reason: they
       // are CV_32FC3, accumulating (presumably) 8-bit components.
       constexpr double out_max = 255.0;
-      const double alpha = out_max / (max_val - min_val);
-      // Beta needs to be prescaled by alpha.
-      const double beta = -min_val * alpha;
-
-      cv::Mat new_v_chan;
-      channels[2].convertTo(new_v_chan, channels[2].type(), alpha, beta);
+      cv::Mat new_v_chan =
+          out_max * (channels[2] - min_val) / (max_val - min_val);
       channels[2] = new_v_chan;
     }
 

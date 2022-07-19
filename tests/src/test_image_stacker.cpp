@@ -13,22 +13,27 @@ auto rgb(uint8_t red, uint8_t green, uint8_t blue) {
   return cv::Vec3b(blue, green, red);
 }
 
-void check_solid_color(const cv::Mat &image, const cv::Vec3b &color,
+auto rgb16(size_t red, size_t green, size_t blue) {
+  return cv::Vec3w(blue, green, red);
+}
+
+template <typename PixelType>
+void check_solid_color(const cv::Mat &image, const PixelType &expected,
                        std::string_view title) {
   // How to do ranged for loops over cv::Mat?
   for (int row = 0; row < image.rows; ++row) {
     for (int col = 0; col < image.cols; ++col) {
-      cv::Vec3b pix = image.at<cv::Vec3b>(row, col);
-      CHECK(pix == color);
-      if (pix != color) {
+      PixelType actual = image.at<PixelType>(row, col);
+      CHECK(actual == expected);
+      if (actual != expected) {
         std::cerr << title << ": Color mismatch at row " << row << ", col "
-                  << col << std::endl;
+                  << col << ": expected " << std::hex << expected << ", got "
+                  << actual << std::endl;
         return;
       }
     }
   }
 }
-
 } // namespace
 
 TEST_CASE("Image Stacker") {
@@ -45,6 +50,18 @@ TEST_CASE("Image Stacker") {
     CHECK(result.rows == 4);
     CHECK(result.cols == 4);
     check_solid_color(result, color, "Stack one image");
+  }
+
+  SECTION("Stack one, 16-bit output") {
+    auto color = rgb(25, 25, 250);
+    auto image = solid_color(4, 4, color);
+    stacker->add(image);
+
+    auto result = stacker->result16();
+    CHECK(result.rows == 4);
+    CHECK(result.cols == 4);
+    auto expected = rgb16(25 * 0xFF, 25 * 0xFF, 250 * 0xFF);
+    check_solid_color(result, expected, "Stack one, 16-bit output");
   }
 
   SECTION("Differing sizes") {
@@ -89,6 +106,29 @@ TEST_CASE("Image Stacker") {
       CHECK(result.cols == 4);
       check_solid_color(result, expected_color,
                         "With dark image - " + std::to_string(i));
+    }
+  }
+
+  SECTION("With dark image, 16-bit output") {
+    auto color = rgb(50, 50, 50);
+    auto image = solid_color(4, 4, color);
+
+    auto dark_color = rgb(0, 5, 10);
+    auto dark_image = solid_color(4, 4, dark_color);
+
+    // Expected result, no matter how many copies of image are stacked,
+    // is color - dark_color.
+    stacker->subtract(dark_image);
+
+    auto expected_color = rgb16(50 * 0xFF, 45 * 0xFF, 40 * 0xFF);
+    for (size_t i = 0; i < 5; ++i) {
+      stacker->add(image);
+      auto result = stacker->result16();
+      CHECK(result.rows == 4);
+      CHECK(result.cols == 4);
+      check_solid_color(result, expected_color,
+                        "With dark image, 16-bit output - " +
+                            std::to_string(i));
     }
   }
 

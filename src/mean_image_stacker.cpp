@@ -33,9 +33,9 @@ struct MeanImageStackerImpl : public MeanImageStacker {
     }
   }
 
-  cv::Mat result8() const override { return converted(0xFF, CV_8UC3); }
+  cv::Mat result8() const override { return converted(1, CV_8UC3); }
 
-  cv::Mat result16() const override { return converted(0xFFFF, CV_16UC3); }
+  cv::Mat result16() const override { return converted(0xFF, CV_16UC3); }
 
 private:
   size_t m_width;
@@ -57,27 +57,29 @@ private:
     return true;
   }
 
-  cv::Mat converted(double max_out, int cv_img_format) const {
+  cv::Mat converted(size_t scale, int cv_img_format) const {
     if (0 == m_count) {
       // No images were added.
       return m_image;
     }
 
+    cv::Mat mean = m_image / m_count;
+
     cv::Mat darkened;
-    subtract_dark_image(m_image, darkened);
+    subtract_dark_image(mean, darkened);
 
+    cv::Mat rescaled = darkened * scale;
+
+    // Convert from CV_32FC3 to cv_img_format.
     cv::Mat result;
-    const double alpha = 1.0 / m_count;
-    darkened.convertTo(result, cv_img_format, alpha);
+    rescaled.convertTo(result, cv_img_format);
 
-    // No need for colorspace conversion.  Only data type conversion
-    // (scaling, offset) was needed.
     return result;
   }
 
   void subtract_dark_image(const cv::Mat &src, cv::Mat &result) const {
     if (!m_dark_image.empty() && check_size(m_dark_image, "dark image")) {
-      result = src - m_count * m_dark_image;
+      result = src - m_dark_image;
     } else {
       result = src;
     }
