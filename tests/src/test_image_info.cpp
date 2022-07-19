@@ -12,16 +12,6 @@ auto ctor1() {
   return std::make_shared<ImageInfo>(path, img);
 }
 
-void throw_on_fail(StackExposures::LibRawPtr proc, int status,
-                   const std::string &msg) {
-  if (status > 0) {
-    throw std::runtime_error(msg + std::strerror(status));
-  }
-  if (status < 0) {
-    throw std::runtime_error(msg + proc->strerror(status));
-  }
-}
-
 // Expect test to run in .../build/tests
 std::filesystem::path ctor2_path("not_a_real_image.rw2");
 
@@ -56,41 +46,43 @@ auto ctor3() {
 }
 } // namespace
 
-TEST_CASE("ctor1") {
-  auto img_info = ctor1();
-  CHECK(img_info != nullptr);
-  CHECK(img_info->path() == std::filesystem::path("/no/such/image.jpg"));
-  CHECK(img_info->image().rows == 0);
-  CHECK(img_info->image().cols == 0);
-}
+TEST_CASE("Image Info") {
+  SECTION("ctor1") {
+    auto img_info = ctor1();
+    CHECK(img_info != nullptr);
+    CHECK(img_info->path() == std::filesystem::path("/no/such/image.jpg"));
+    CHECK(img_info->image().rows == 0);
+    CHECK(img_info->image().cols == 0);
+  }
 
-TEST_CASE("ctor2") {
-  auto img_info = ctor2();
-  CHECK(img_info != nullptr);
-  CHECK(img_info->path() == ctor2_path);
-  CHECK(img_info->image().rows > 0);
-  CHECK(img_info->image().cols > 0);
-  // How to ensure img_info dtor releases image memory?
-}
+  SECTION("ctor2") {
+    auto img_info = ctor2();
+    CHECK(img_info != nullptr);
+    CHECK(img_info->path() == ctor2_path);
+    CHECK(img_info->image().rows > 0);
+    CHECK(img_info->image().cols > 0);
+    // How to ensure img_info dtor releases image memory?
+  }
 
-TEST_CASE("ctor3") {
-  auto img_info = ctor3();
-  CHECK(img_info != nullptr);
-  CHECK(img_info->path() == ctor2_path);
-  CHECK(img_info->image().rows > 0);
-  CHECK(img_info->image().cols > 0);
-}
+  SECTION("ctor3") {
+    auto img_info = ctor3();
+    CHECK(img_info != nullptr);
+    CHECK(img_info->path() == ctor2_path);
+    CHECK(img_info->image().rows > 0);
+    CHECK(img_info->image().cols > 0);
+  }
 
-TEST_CASE("same_extents") {
-  auto info1 = ctor1();
-  auto info2 = ctor2();
+  SECTION("same_extents") {
+    auto info1 = ctor1();
+    auto info2 = ctor2();
 
-  CHECK(!info1->same_extents(info2));
-  CHECK(info2->same_extents(info2));
-}
+    CHECK(!info1->same_extents(info2));
+    CHECK(info2->same_extents(info2));
+  }
 
-TEST_CASE("dimensions") {
-  auto info = ctor2();
-  CHECK(info->rows() == 4);
-  CHECK(info->cols() == 4);
+  SECTION("dimensions") {
+    auto info = ctor2();
+    CHECK(info->rows() == 4);
+    CHECK(info->cols() == 4);
+  }
 }

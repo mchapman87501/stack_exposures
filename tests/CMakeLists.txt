@@ -42,6 +42,24 @@ target_link_libraries(test_image_aligner
     PUBLIC stack_exp_cov PRIVATE Catch2::Catch2WithMain arg_parse::arg_parse ${OpenCV_LIBS} ${LibRaw_LIBRARIES})
 catch_discover_tests(test_image_aligner)
 
+add_executable(test_image_stacker src/test_image_stacker.cpp)
+target_compile_features(test_image_stacker PUBLIC cxx_std_20)
+target_include_directories(test_image_stacker
+    PUBLIC ../include
+    PRIVATE ${arg_parse_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${LibRaw_INCLUDE_DIR})
+target_link_libraries(test_image_stacker
+    PUBLIC stack_exp_cov PRIVATE Catch2::Catch2WithMain arg_parse::arg_parse ${OpenCV_LIBS} ${LibRaw_LIBRARIES})
+catch_discover_tests(test_image_stacker)
+
+add_executable(test_mean_image_stacker src/test_mean_image_stacker.cpp)
+target_compile_features(test_mean_image_stacker PUBLIC cxx_std_20)
+target_include_directories(test_mean_image_stacker
+    PUBLIC ../include
+    PRIVATE ${arg_parse_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${LibRaw_INCLUDE_DIR})
+target_link_libraries(test_mean_image_stacker
+    PUBLIC stack_exp_cov PRIVATE Catch2::Catch2WithMain arg_parse::arg_parse ${OpenCV_LIBS} ${LibRaw_LIBRARIES})
+catch_discover_tests(test_mean_image_stacker)
+
 # Integration test:
 add_executable(stack_exposures_cov ../src/main.cpp)
 target_compile_features(stack_exposures_cov PUBLIC cxx_std_20)
@@ -154,6 +172,7 @@ setup_target_for_coverage_lcov(NAME coverage_report
     EXECUTABLE ctest
     DEPENDENCIES
     test_image_info test_image_loader test_image_aligner
+    test_image_stacker test_mean_image_stacker
     stack_exposures_cov
     EXCLUDE
     "include/*"

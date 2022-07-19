@@ -13,14 +13,14 @@ struct IImageStacker {
    * @details If the dimensions of the new image do not match the rest of the
    * stack, the image will not be added.
    *
-   * @param[in]  new_image  The image to be added.
+   * @param  new_image  The image to be added.
    */
   virtual void add(const cv::Mat &new_image) = 0;
 
   /**
-   * @brief      Subtract an image -- e.g., a dark frame -- from the stack.
+   * @brief  Subtract an image -- e.g., a dark frame -- from the stack.
    *
-   * @param[in]  new_image  The image to be subtracted.
+   * @param  new_image  The image to be subtracted.
    */
   virtual void subtract(const cv::Mat &new_image) = 0;
 
