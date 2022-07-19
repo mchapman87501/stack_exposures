@@ -11,7 +11,6 @@
 #include "image_aligner.hpp"
 #include "image_loader.hpp"
 #include "image_stacker.hpp"
-#include "mean_image_stacker.hpp"
 #include "str_util.hpp"
 
 using namespace StackExposures;
@@ -116,10 +115,10 @@ void report_size_mismatch(ImageInfo::SharedPtr ref_img,
 
 IImageStacker::Ptr image_stacker(std::string_view method_id) {
   if (method_id == "m") {
-    return MeanImageStacker::create();
+    return ImageStacker::mean();
   }
   if (method_id == "s") {
-    return ImageStacker::create();
+    return ImageStacker::stretch();
   }
   throw std::runtime_error("Unsupported STACKING_METHOD");
 }

@@ -1,4 +1,4 @@
-#include "mean_image_stacker.hpp"
+#include "image_stacker.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <iostream>
 #include <opencv2/core.hpp>
@@ -41,7 +41,7 @@ void check_solid_color(const cv::Mat &image, const PixelType &expected,
 TEST_CASE("Mean Image Stacker") {
   using namespace StackExposures;
 
-  auto stacker = MeanImageStacker::create();
+  auto stacker = ImageStacker::mean();
 
   SECTION("Stack one image") {
     auto color = rgb(25, 25, 250);

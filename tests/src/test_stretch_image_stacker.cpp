@@ -39,7 +39,7 @@ void check_solid_color(const cv::Mat &image, const PixelType &expected,
 TEST_CASE("Image Stacker") {
   using namespace StackExposures;
 
-  auto stacker = ImageStacker::create();
+  auto stacker = ImageStacker::stretch();
 
   SECTION("Stack one image") {
     auto color = rgb(25, 25, 250);
