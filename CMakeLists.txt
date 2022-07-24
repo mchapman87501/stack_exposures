@@ -22,8 +22,10 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(arg_parse)
 
 include(cmake_modules/CodeCoverage.cmake)
+
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(STACK_EXP_SRC
     src/image_loader.cpp

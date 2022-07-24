@@ -1,9 +1,8 @@
 #!/bin/sh
 set -e -u
 
-mkdir -p build/debug
+cmake -Bbuild/debug -S. \
+      -DCMAKE_BUILD_TYPE=Debug
 cd build/debug
-
-cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ../..
-cmake --build . --target coverage_report
+cmake --build . -j 4 --target coverage_report
 open coverage_report/index.html

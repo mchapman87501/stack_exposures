@@ -2,15 +2,13 @@
 set -e -u
 
 
-cd ${HOME}
-echo "HOME is ${PWD}"
-mkdir -p build/release
-cd build/release
+cd
 
-cmake -DCMAKE_BUILD_TYPE=Release \
-      -DCMAKE_INSTALL_PREFIX=/source/build_artifacts/local \
-      /source
-cmake --build .
+cmake -Bbuild/release -S/source \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_INSTALL_PREFIX=/source/build_artifacts/local
+cd build/release
+cmake --build . -j 4
 cmake --install .
 
 # Prove that we got a usable, installed executable:
