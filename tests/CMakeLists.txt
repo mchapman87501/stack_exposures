@@ -168,6 +168,13 @@ foreach (stacking_method m s)
             ${pit_img} ${pit_img})
 endforeach()
 
+get_target_property(CATCH2_INCLUDE_DIRS Catch2::Catch2 INTERFACE_INCLUDE_DIRECTORIES)
+set(CATCH2_COV_EXC "")
+foreach(entry IN ITEMS ${CATCH2_INCLUDE_DIRS})
+    list(APPEND CATCH2_COV_EXC "${entry}/*")
+endforeach()
+
+
 setup_target_for_coverage_lcov(NAME coverage_report
     EXECUTABLE ctest
     DEPENDENCIES
@@ -177,8 +184,12 @@ setup_target_for_coverage_lcov(NAME coverage_report
     EXCLUDE
     "include/*"
     "build/*"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/*" "/opt/homebrew/*" "/Applications/*"
-    "/usr/*")
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*"
+    "/Applications/*"  # Exclude C++ headers that reside under Xcode
+    "/usr/*"
+    ${CATCH2_COV_EXC}
+    "${OpenCV_INSTALL_PATH}/*"
+    )
 
 # *nix only:
 add_custom_command(TARGET coverage_report
