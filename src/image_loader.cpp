@@ -16,8 +16,8 @@ void configure(LibRawSharedPtr processor) {
   // Use sRGB color space and gamma curve.  See output_color, and See gamm[6],
   // at https://www.libraw.org/docs/API-datastruct.html#libraw_output_params_t
   processor->imgdata.params.output_color = 1; // sRGB
-  processor->imgdata.params.gamm[0] = 1.0 / 2.4;
-  processor->imgdata.params.gamm[1] = 12.92;
+  processor->imgdata.params.gamm[0] = 1.0;    // 1.0 / 2.4;
+  processor->imgdata.params.gamm[1] = 1.0;    // 12.92;
   processor->imgdata.params.no_auto_bright = 1;
 
   // TODO - ARW-specific parameters, e.g., to suppress posterization

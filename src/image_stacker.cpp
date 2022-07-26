@@ -10,7 +10,7 @@ namespace StackExposures {
 namespace {
 
 struct Mean : public IImageStacker {
-  Mean() : m_image(), m_dark_image() {}
+  Mean(double gamma) : m_image(), m_dark_image(), m_gamma(gamma) {}
 
   void add(const cv::Mat &new_image) override {
     if ((m_width == 0) && (m_height == 0)) {
@@ -50,13 +50,31 @@ protected:
       return {};
     }
 
-    cv::Mat rescaled = darkened() * scale;
+    cv::Mat rescaled = with_gamma(darkened()) * scale;
 
     // Convert from CV_32FC3 to cv_img_format.
     cv::Mat result;
     rescaled.convertTo(result, cv_img_format);
 
     return result;
+  }
+
+  [[nodiscard]] cv::Mat with_gamma(const cv::Mat &image) const {
+    //
+    if (::abs(m_gamma - 1.0) <= 1.0e-6) {
+      return image;
+    }
+
+    // Apply sRGB gamma to image.  Assume image has depth CV_32F, with values in
+    // 0...255. See LibRaw's tiff.cpp.  Also see
+    // https://pyimagesearch.com/2015/10/05/opencv-gamma-correction/
+    // https://www.libraw.org/docs/API-datastruct.html#libraw_output_params_t
+
+    const auto normed = image / 255.0;
+    const double power = 1.0 / m_gamma;
+    cv::Mat gamma_applied;
+    cv::pow(normed, power, gamma_applied);
+    return gamma_applied * 255.0;
   }
 
   [[nodiscard]] bool empty() const { return m_count == 0; }
@@ -73,6 +91,8 @@ protected:
   }
 
 private:
+  const double m_gamma{2.4};
+
   size_t m_width{0};
   size_t m_height{0};
 
@@ -95,6 +115,8 @@ private:
 };
 
 struct Stretch : public Mean {
+  Stretch(double gamma) : Mean(gamma) {}
+
 protected:
   [[nodiscard]] cv::Mat converted(size_t scale,
                                   int cv_img_format) const override {
@@ -114,7 +136,7 @@ protected:
     cv::Mat stretched_bgr;
     cv::cvtColor(stretched_hsv, stretched_bgr, cv::COLOR_HSV2BGR);
 
-    cv::Mat rescaled = stretched_bgr * scale;
+    cv::Mat rescaled = with_gamma(stretched_bgr) * scale;
 
     // Convert from CV_32FC3 to cv_img_format.
     cv::Mat result;
@@ -150,8 +172,10 @@ protected:
 } // namespace
 
 namespace ImageStacker {
-IImageStacker::Ptr mean() { return std::make_unique<Mean>(); }
-IImageStacker::Ptr stretch() { return std::make_unique<Stretch>(); }
+IImageStacker::Ptr mean(double gamma) { return std::make_unique<Mean>(gamma); }
+IImageStacker::Ptr stretch(double gamma) {
+  return std::make_unique<Stretch>(gamma);
+}
 } // namespace ImageStacker
 
 } // namespace StackExposures

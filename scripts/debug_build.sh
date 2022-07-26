@@ -1,6 +1,9 @@
 #!/bin/sh
 set -e -u
 
+SCRIPT_DIR=$(dirname "$0")
+cd ${SCRIPT_DIR}/../
+
 cmake -Bbuild/debug -S. \
       -DCMAKE_BUILD_TYPE=Debug
 cd build/debug

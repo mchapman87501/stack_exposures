@@ -41,7 +41,7 @@ void check_solid_color(const cv::Mat &image, const PixelType &expected,
 TEST_CASE("Mean Image Stacker") {
   using namespace StackExposures;
 
-  auto stacker = ImageStacker::mean();
+  auto stacker = ImageStacker::mean(1.0);
 
   SECTION("Stack one image") {
     auto color = rgb(25, 25, 250);
