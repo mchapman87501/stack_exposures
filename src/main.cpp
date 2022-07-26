@@ -19,29 +19,34 @@ namespace {
 using ImageInfoFuture = std::shared_future<ImageInfo::SharedPtr>;
 
 static const std::string default_out_pathname("stacked.tiff");
+static constexpr double default_gamma(2.4);
 
 class CmdOption {
   ArgParse::ArgumentParser::Ptr m_parser;
   ArgParse::Flag::Ptr m_no_align;
-  ArgParse::Option<std::string>::Ptr m_method;
+  ArgParse::Option<double>::Ptr m_gamma;
+  ArgParse::Choice::Ptr m_method;
   ArgParse::Option<std::filesystem::path>::Ptr m_output_path;
   ArgParse::Option<std::filesystem::path>::Ptr m_dark_image;
   ArgParse::Argument<std::filesystem::path>::Ptr m_input_images;
-
-  std::string m_chosen_method;
 
 public:
   CmdOption(int argc, char **argv) {
     m_parser =
         ArgParse::ArgumentParser::create("Stack images into a single image.");
+
     m_no_align = ArgParse::flag(m_parser, "--no-align", "--no-align",
                                 "Skip aligning images before stacking.");
 
-    // arg_parse option and choice need to support default values.
+    m_gamma = ArgParse::option<double>(
+        m_parser, "-g", "--gamma",
+        "gamma to apply to final stacked image.  Default " +
+            std::to_string(default_gamma),
+        default_gamma);
+
     m_method = ArgParse::choice(m_parser, "-s", "--stacking-method",
                                 "stacking method: 'm' == mean, 's' == scaled.",
                                 {"m", "s"});
-    m_chosen_method = "m"; // Default
 
     m_dark_image = ArgParse::option<std::filesystem::path>(
         m_parser, "-d", "--dark-image",
@@ -57,10 +62,6 @@ public:
         m_parser, "image", ArgParse::Nargs::one_or_more, "Stack these images.");
 
     m_parser->parse_args(argc, argv);
-
-    if (!m_method->value().empty()) {
-      m_chosen_method = m_method->value();
-    }
   }
 
   [[nodiscard]] bool should_exit() const { return m_parser->should_exit(); }
@@ -73,11 +74,12 @@ public:
 
   [[nodiscard]] bool align() const { return !m_no_align->is_set(); }
 
-  [[nodiscard]] std::string method() const { return m_chosen_method; }
+  [[nodiscard]] std::string method() const { return m_method->value(); }
 
-  std::string const output_pathname() {
-    return (m_output_path->value().empty()) ? default_out_pathname
-                                            : m_output_path->value().string();
+  [[nodiscard]] double gamma() const { return m_gamma->value(); }
+
+  [[nodiscard]] std::filesystem::path output_pathname() const {
+    return m_output_path->value();
   }
 };
 
@@ -113,12 +115,12 @@ void report_size_mismatch(ImageInfo::SharedPtr ref_img,
             << ref_img->cols() << " x " << ref_img->rows() << ")" << std::endl;
 }
 
-IImageStacker::Ptr image_stacker(std::string_view method_id) {
+IImageStacker::Ptr image_stacker(std::string_view method_id, double gamma) {
   if (method_id == "m") {
-    return ImageStacker::mean();
+    return ImageStacker::mean(gamma);
   }
   if (method_id == "s") {
-    return ImageStacker::stretch();
+    return ImageStacker::stretch(gamma);
   }
   throw std::runtime_error("Unsupported STACKING_METHOD");
 }
@@ -156,7 +158,7 @@ int main(int argc, char *argv[]) {
   }
 
   ImageAligner aligner;
-  IImageStacker::Ptr stacker = image_stacker(opt.method());
+  IImageStacker::Ptr stacker = image_stacker(opt.method(), opt.gamma());
 
   ImageInfo::SharedPtr ref_img(nullptr);
 
@@ -184,6 +186,7 @@ int main(int argc, char *argv[]) {
   }
 
   const auto output_pathname(opt.output_pathname());
-  cv::imwrite(output_pathname, stacked_result(stacker, output_pathname));
+  cv::imwrite(output_pathname,
+              stacked_result(stacker, output_pathname.string()));
   return 0;
 }
