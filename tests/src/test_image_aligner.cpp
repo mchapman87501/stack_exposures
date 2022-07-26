@@ -24,8 +24,8 @@ TEST_CASE("Image Aligner") {
 
     auto img2 = dummy_image(32, 32);
     auto result2 = aligner.align(img2);
-    // Can't align, so return the unmodified input image.
-    CHECK(result2 == img2);
+    // Can't align, so return null.
+    CHECK(result2 == nullptr);
   }
 
   SECTION("Align same size") {
@@ -52,9 +52,8 @@ TEST_CASE("Image Aligner") {
     CHECK(result1 == img1);
 
     auto result2 = aligner.align(img2);
-    // Alignment should fail, so img2 should be returned unchanged.
-    CHECK(result2 == img2);
+    // Alignment should fail, so result2 should be null.
+    CHECK(result2 == nullptr);
     // TODO capture and verify stderr messages.
-    // https://github.com/catchorg/Catch2/blob/a243cbae52d5599ccce07b36cfe8b2e3308d4108/tests/ExtraTests/X27-CapturedStdoutInTestCaseEvents.cpp
   }
 }

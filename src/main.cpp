@@ -173,7 +173,9 @@ int main(int argc, char *argv[]) {
 
     if (ref_img->same_extents(img_info)) {
       auto aligned = opt.align() ? aligner.align(img_info) : img_info;
-      stacker->add(aligned->image());
+      if (aligned != nullptr) {
+        stacker->add(aligned->image());
+      }
     } else {
       report_size_mismatch(ref_img, img_info);
     }
@@ -186,7 +188,11 @@ int main(int argc, char *argv[]) {
   }
 
   const auto output_pathname(opt.output_pathname());
-  cv::imwrite(output_pathname,
-              stacked_result(stacker, output_pathname.string()));
+  const auto final_image = stacked_result(stacker, output_pathname.string());
+  if (final_image.empty()) {
+    std::cerr << "Final stack image is empty." << std::endl;
+    return 2;
+  }
+  cv::imwrite(output_pathname, final_image);
   return 0;
 }

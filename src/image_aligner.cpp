@@ -19,21 +19,22 @@ namespace StackExposures {
 ImageInfo::SharedPtr ImageAligner::align(ImageInfo::SharedPtr image) {
   if (!m_ref_img) {
     m_ref_img = image;
+    return image;
+  }
+
+  if (!m_ref_img->same_extents(image)) {
+    std::cerr << "Cannot align " << image->path() << " to " << m_ref_img->path()
+              << ": images have different dimensions." << std::endl;
   } else {
-    if (!m_ref_img->same_extents(image)) {
-      std::cerr << "Cannot align " << image->path() << " to "
-                << m_ref_img->path() << ": images have different dimensions."
-                << std::endl;
-    } else {
-      try {
-        return align_internal(m_ref_img, image);
-      } catch (cv::Exception &e) {
-        std::cerr << "Could not align " << image->path() << " to "
-                  << m_ref_img->path() << ": " << e.what() << std::endl;
-      }
+    try {
+      return align_internal(m_ref_img, image);
+    } catch (cv::Exception &e) {
+      std::cerr << "Could not align " << image->path() << " to "
+                << m_ref_img->path() << ": " << e.what() << std::endl;
     }
   }
-  return image;
+
+  return nullptr;
 }
 
 ImageInfo::SharedPtr
