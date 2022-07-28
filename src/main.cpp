@@ -145,11 +145,10 @@ private:
     bool stack_succeeded = align_and_stack();
     m_pair_stacker->clear();
     if (stack_succeeded) {
-      m_pair_stacker->add(m_stacked->image());
+      auto mean = m_stacked->image() / m_images.size();
+      m_pair_stacker->add(mean);
       if ((m_dark_image != nullptr) && !m_dark_image->empty()) {
-        // How to tell the stacker that m_stacked->image() is the sum of N
-        // images?
-        auto dark = m_dark_image->image() * m_images.size();
+        auto dark = m_dark_image->image();
         m_pair_stacker->subtract(dark);
       }
     }
