@@ -47,7 +47,6 @@ ImageAligner::align_internal(ImageInfo::SharedPtr ref,
 
   using namespace cv;
 
-  std::cout << "  Create alignment grayscales." << std::endl;
   Mat ref_gray;
   cvtColor(ref->image(), ref_gray, COLOR_BGR2GRAY);
 
@@ -59,18 +58,15 @@ ImageAligner::align_internal(ImageInfo::SharedPtr ref,
   const double termination_eps = 1.0e-4;
   Mat warp_matrix = Mat::eye(2, 3, CV_32F);
 
-  std::cout << "  Find transformECC" << std::endl;
   findTransformECC(ref_gray, to_align_gray, warp_matrix, warp_mode,
                    TermCriteria(TermCriteria::COUNT + TermCriteria::EPS,
                                 num_iterations, termination_eps));
 
-  std::cout << "  Align" << std::endl;
   // Do the alignment.
   Mat warped_image =
       Mat(to_align->image().rows, to_align->image().cols, CV_32FC1);
   warpAffine(to_align->image(), warped_image, warp_matrix, warped_image.size(),
              INTER_LINEAR + WARP_INVERSE_MAP);
-  std::cout << "  Return aligned result" << std::endl;
   return ImageInfo::with_image(*to_align, warped_image);
 }
 } // namespace StackExposures
