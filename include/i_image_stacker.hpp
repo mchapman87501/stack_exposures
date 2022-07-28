@@ -27,6 +27,19 @@ struct IImageStacker {
   virtual void subtract(const cv::Mat &new_image) = 0;
 
   /**
+   * @brief      Clear all added and subtracted images.
+   */
+  virtual void clear() = 0;
+
+  /**
+   * @brief      Get the result of stacking so far, without dark image
+   * subtraction, averaging, etc.
+   *
+   * @return     The sum of all images stacked so far, in 32FC3 format.
+   */
+  virtual cv::Mat partial_sum() const = 0;
+
+  /**
    * @brief Get the stacked composite image.
    *
    * @return cv::Mat An 8-bit, 3 channel image

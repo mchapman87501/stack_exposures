@@ -55,4 +55,6 @@ size_t ImageInfo::rows() const { return m_image.rows; }
 
 size_t ImageInfo::cols() const { return m_image.cols; }
 
+bool ImageInfo::empty() const { return m_image.empty(); }
+
 } // namespace StackExposures

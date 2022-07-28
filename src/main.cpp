@@ -115,6 +115,130 @@ void report_size_mismatch(ImageInfo::SharedPtr ref_img,
             << ref_img->cols() << " x " << ref_img->rows() << ")" << std::endl;
 }
 
+struct MainStacker {
+  MainStacker(std::deque<ImageInfoFuture> &images,
+              IImageStacker::Ptr pair_stacker)
+      : m_images(images), m_pair_stacker(std::move(pair_stacker)) {}
+
+  void add_dark_image(ImageInfo::SharedPtr dark_image) {
+    m_dark_image = dark_image;
+  }
+
+  [[nodiscard]] cv::Mat result8() {
+    make_final_stack();
+    return m_pair_stacker->result8();
+  }
+
+  [[nodiscard]] cv::Mat result16() {
+    make_final_stack();
+    return m_pair_stacker->result16();
+  }
+
+private:
+  const std::deque<ImageInfoFuture> &m_images;
+  IImageStacker::Ptr m_pair_stacker;
+  ImageInfo::SharedPtr m_dark_image;
+
+  ImageInfo::SharedPtr m_stacked{};
+
+  void make_final_stack() {
+    bool stack_succeeded = align_and_stack();
+    m_pair_stacker->clear();
+    if (stack_succeeded) {
+      m_pair_stacker->add(m_stacked->image());
+      if ((m_dark_image != nullptr) && !m_dark_image->empty()) {
+        // How to tell the stacker that m_stacked->image() is the sum of N
+        // images?
+        auto dark = m_dark_image->image() * m_images.size();
+        m_pair_stacker->subtract(dark);
+      }
+    }
+  }
+
+  bool align_and_stack() {
+    const auto count = m_images.size();
+    if (count < 2) {
+      std::cerr << "Can't align and stack -- need at least two images."
+                << std::endl;
+      return false;
+    }
+    if (count == 2) {
+      // Special case TBD
+      m_stacked = align_and_stack_one(m_images[0].get(), 1, m_images[1].get());
+      return true;
+    }
+
+    const auto i_center = count / 2;
+    size_t i;
+
+    auto left_result = m_images.front().get();
+    size_t left_stack_count = 1;
+    for (i = 1; i < i_center; ++i) {
+      std::cout << "Left " << i << std::endl;
+      left_result =
+          align_and_stack_one(left_result, left_stack_count, m_images[i].get());
+      left_stack_count += 1;
+    }
+
+    auto right_result = m_images.back().get();
+    size_t right_stack_count = 1;
+    for (i = count - 2; i >= i_center; --i) {
+      std::cout << "Right " << i << std::endl;
+      right_result = align_and_stack_one(right_result, right_stack_count,
+                                         m_images[i].get());
+      right_stack_count += 1;
+    }
+
+    if (!(left_result->empty() || right_result->empty())) {
+      m_stacked = align_and_stack_one(left_result, 1, right_result);
+      return true;
+    }
+    std::cerr << "Can't align and stack.  At least one partial result is empty."
+              << std::endl;
+
+    return false;
+  }
+
+  [[nodiscard]] ImageInfo::SharedPtr
+  align_and_stack_one(const ImageInfo::SharedPtr image,
+                      const size_t image_stack_count,
+                      const ImageInfo::SharedPtr ref_image) {
+
+    if (!ref_image->same_extents(image)) {
+      report_size_mismatch(ref_image, image);
+      return ref_image;
+    }
+    ImageAligner aligner;
+    // Scale the ref image brightness to make both images roughly the same
+    // scale...
+    cv::Mat boosted_ref_mat = ref_image->image() * image_stack_count;
+    auto boosted_ref = ImageInfo::with_image(*ref_image, boosted_ref_mat);
+    auto ref_aligned = aligner.align(to_internal_data_type(boosted_ref));
+    auto image_aligned = aligner.align(to_internal_data_type(image));
+    if ((ref_aligned != nullptr) && (image_aligned != nullptr)) {
+      return stack_pair(image_aligned, ref_aligned);
+    }
+    return ref_image;
+  }
+
+  ImageInfo::SharedPtr to_internal_data_type(const ImageInfo::SharedPtr image) {
+    cv::Mat internal_image;
+    image->image().convertTo(internal_image, CV_32FC3);
+    return ImageInfo::with_image(*image, internal_image);
+  }
+
+  [[nodiscard]] ImageInfo::SharedPtr
+  stack_pair(const ImageInfo::SharedPtr image,
+             const ImageInfo::SharedPtr bottom_image) {
+    m_pair_stacker->clear();
+    m_pair_stacker->add(bottom_image->image());
+    m_pair_stacker->add(image->image());
+
+    auto psum = m_pair_stacker->partial_sum();
+    return ImageInfo::with_image(*image, psum);
+  }
+};
+
 IImageStacker::Ptr image_stacker(std::string_view method_id, double gamma) {
   if (method_id == "m") {
     return ImageStacker::mean(gamma);
@@ -133,21 +257,20 @@ std::string filename_suffix(std::string_view filename) {
   return "";
 }
 
-auto stacked_result(const IImageStacker::Ptr &stacker,
-                    std::string_view filename) {
+auto stacked_result(MainStacker &stacker, std::string_view filename) {
   auto suffix = StrUtil::lowercase(filename_suffix(filename));
   if ((suffix == ".tiff") || (suffix == ".tif")) {
-    return stacker->result16();
+    return stacker.result16();
   }
   if (suffix == ".png") {
-    return stacker->result16();
+    return stacker.result16();
   }
   if (suffix == ".jpg") {
-    return stacker->result8();
+    return stacker.result8();
   }
   // TODO HDR
   // Play it safe.
-  return stacker->result8();
+  return stacker.result8();
 }
 } // namespace
 
@@ -157,38 +280,46 @@ int main(int argc, char *argv[]) {
     return opt.exit_code();
   }
 
-  ImageAligner aligner;
-  IImageStacker::Ptr stacker = image_stacker(opt.method(), opt.gamma());
-
-  ImageInfo::SharedPtr ref_img(nullptr);
-
   AsyncImageLoader loader(opt.images());
-  for (auto fut : loader.futures()) {
-    ImageInfo::SharedPtr img_info = fut.get();
-    std::cout << img_info->path() << std::endl << std::flush;
-
-    if (!ref_img) {
-      ref_img = img_info;
-    }
-
-    if (ref_img->same_extents(img_info)) {
-      auto aligned = opt.align() ? aligner.align(img_info) : img_info;
-      if (aligned != nullptr) {
-        stacker->add(aligned->image());
-      }
-    } else {
-      report_size_mismatch(ref_img, img_info);
-    }
-  }
+  auto futures = loader.futures();
+  MainStacker main_stacker(futures, image_stacker(opt.method(), opt.gamma()));
 
   if (!opt.dark_image().empty()) {
     ImageLoader loader;
     auto dark_image = loader.load_image(opt.dark_image());
-    stacker->subtract(dark_image->image());
+    main_stacker.add_dark_image(dark_image);
   }
 
+  // ImageAligner aligner;
+  // ImageInfo::SharedPtr ref_img(nullptr);
+
+  // for (auto fut : loader.futures()) {
+  //   ImageInfo::SharedPtr img_info = fut.get();
+  //   std::cout << img_info->path() << std::endl << std::flush;
+
+  //   if (!ref_img) {
+  //     ref_img = img_info;
+  //   }
+
+  //   if (ref_img->same_extents(img_info)) {
+  //     auto aligned = opt.align() ? aligner.align(img_info) : img_info;
+  //     if (aligned != nullptr) {
+  //       stacker->add(aligned->image());
+  //     }
+  //   } else {
+  //     report_size_mismatch(ref_img, img_info);
+  //   }
+  // }
+
+  // if (!opt.dark_image().empty()) {
+  //   ImageLoader loader;
+  //   auto dark_image = loader.load_image(opt.dark_image());
+  //   stacker->subtract(dark_image->image());
+  // }
+
   const auto output_pathname(opt.output_pathname());
-  const auto final_image = stacked_result(stacker, output_pathname.string());
+  const auto final_image =
+      stacked_result(main_stacker, output_pathname.string());
   if (final_image.empty()) {
     std::cerr << "Final stack image is empty." << std::endl;
     return 2;
