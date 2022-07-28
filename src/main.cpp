@@ -145,48 +145,39 @@ private:
     bool stack_succeeded = align_and_stack();
     m_pair_stacker->clear();
     if (stack_succeeded) {
-      auto mean = m_stacked->image() / m_images.size();
-      m_pair_stacker->add(mean);
+      m_pair_stacker->add(m_stacked->image() / m_images.size());
       if ((m_dark_image != nullptr) && !m_dark_image->empty()) {
-        auto dark = m_dark_image->image();
-        m_pair_stacker->subtract(dark);
+        m_pair_stacker->subtract(m_dark_image->image());
       }
     }
   }
 
   bool align_and_stack() {
     const auto count = m_images.size();
-    if (count < 2) {
-      std::cerr << "Can't align and stack -- need at least two images."
-                << std::endl;
-      return false;
-    }
-    if (count == 2) {
-      // Special case TBD
-      m_stacked = align_and_stack_one(m_images[0].get(), 1, m_images[1].get());
+    if (count < 3) {
+      if (count < 1) {
+        std::cerr << "Can't align and stack -- need at least two images."
+                  << std::endl;
+        return false;
+      }
+      if (count == 1) {
+        m_stacked = m_images.front().get();
+        return true;
+      }
+      m_stacked =
+          align_and_stack_one(m_images.front().get(), 1, m_images.back().get());
       return true;
     }
 
     const auto i_center = count / 2;
-    size_t i;
 
-    auto left_result = m_images.front().get();
-    size_t left_stack_count = 1;
-    for (i = 1; i < i_center; ++i) {
-      std::cout << "Left " << i << std::endl;
-      left_result =
-          align_and_stack_one(left_result, left_stack_count, m_images[i].get());
-      left_stack_count += 1;
-    }
-
-    auto right_result = m_images.back().get();
-    size_t right_stack_count = 1;
-    for (i = count - 2; i >= i_center; --i) {
-      std::cout << "Right " << i << std::endl;
-      right_result = align_and_stack_one(right_result, right_stack_count,
-                                         m_images[i].get());
-      right_stack_count += 1;
-    }
+    // Alas, clang 14 doesn't support std::views.
+    // TODO write tests to verify that all images are processed.
+    const auto left_result =
+        align_and_stack_some(m_images.begin(), m_images.begin() + i_center);
+    const auto num_to_process = i_center + (((2 * i_center) < count) ? 1 : 0);
+    const auto right_result = align_and_stack_some(
+        m_images.rbegin(), m_images.rbegin() + num_to_process);
 
     if (!(left_result->empty() || right_result->empty())) {
       m_stacked = align_and_stack_one(left_result, 1, right_result);
@@ -196,6 +187,20 @@ private:
               << std::endl;
 
     return false;
+  }
+
+  ImageInfo::SharedPtr align_and_stack_some(const auto begin, const auto end) {
+    size_t count = 1;
+    auto fut_iter = begin;
+    auto result = fut_iter->get();
+    std::cout << result->path() << std::endl;
+    for (++fut_iter; fut_iter != end; ++fut_iter) {
+      auto image(fut_iter->get());
+      std::cout << image->path() << std::endl;
+      result = align_and_stack_one(result, count, image);
+      count += 1;
+    }
+    return result;
   }
 
   [[nodiscard]] ImageInfo::SharedPtr
@@ -213,6 +218,7 @@ private:
     cv::Mat boosted_ref_mat = ref_image->image() * image_stack_count;
     auto boosted_ref = ImageInfo::with_image(*ref_image, boosted_ref_mat);
     auto ref_aligned = aligner.align(to_internal_data_type(boosted_ref));
+
     auto image_aligned = aligner.align(to_internal_data_type(image));
     if ((ref_aligned != nullptr) && (image_aligned != nullptr)) {
       return stack_pair(image_aligned, ref_aligned);
@@ -233,8 +239,8 @@ private:
     m_pair_stacker->add(bottom_image->image());
     m_pair_stacker->add(image->image());
 
-    auto psum = m_pair_stacker->partial_sum();
-    return ImageInfo::with_image(*image, psum);
+    // auto psum = m_pair_stacker->partial_sum();
+    return ImageInfo::with_image(*image, m_pair_stacker->partial_sum());
   }
 };
 

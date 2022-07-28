@@ -19,7 +19,7 @@ struct ImageInfo {
    *
    * @return     A shared pointer to the new instance
    */
-  static SharedPtr from_file(std::filesystem::path path, cv::Mat &image);
+  static SharedPtr from_file(std::filesystem::path path, const cv::Mat &image);
 
   /**
    * @brief      Create with an image loaded from a raw file.
@@ -42,7 +42,7 @@ struct ImageInfo {
    *
    * @return     A shared pointer to the new instance
    */
-  static SharedPtr with_image(const ImageInfo &src, cv::Mat &image);
+  static SharedPtr with_image(const ImageInfo &src, const cv::Mat &image);
 
   /**
    * @brief      Get the pathname associated with this image.
@@ -96,7 +96,7 @@ protected:
    * @param[in]  path   Path of the image file
    * @param      image  OpenCV image data for the image
    */
-  ImageInfo(std::filesystem::path path, cv::Mat &image);
+  ImageInfo(std::filesystem::path path, const cv::Mat &image);
 
   /**
    * @brief      Constructs a new instance.
@@ -114,7 +114,7 @@ protected:
    * @param[in]  src    ImageInfo instance with image metainfo
    * @param      image  New OpenCV image data
    */
-  ImageInfo(const ImageInfo &src, cv::Mat &image);
+  ImageInfo(const ImageInfo &src, const cv::Mat &image);
 
   ImageInfo(const ImageInfo &src) = delete;
   ImageInfo(ImageInfo &&src) = delete;
