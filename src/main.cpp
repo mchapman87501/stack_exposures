@@ -139,17 +139,25 @@ private:
   ImageInfo::SharedPtr m_dark_image;
 
   [[nodiscard]] IImageStacker::Ptr make_final_stack() const {
-    auto result = m_new_stacker();
     bool succeeded{false};
     ImageInfo::SharedPtr stacked_image{};
     process_all(succeeded, stacked_image);
+
+    auto result = m_new_stacker();
     if (succeeded) {
-      result->add(stacked_image->image() / m_images.size());
-      if ((m_dark_image != nullptr) && !m_dark_image->empty()) {
-        result->subtract(m_dark_image->image());
-      }
+      result->add(darkened(stacked_image->image() / m_images.size()));
     }
     return result;
+  }
+
+  [[nodiscard]] cv::Mat darkened(cv::Mat image) const {
+    if (m_dark_image != nullptr) {
+      const auto dark = to_stacking_format(m_dark_image)->image();
+      if ((image.rows == dark.rows) && (image.cols == dark.cols)) {
+        return image - dark;
+      }
+    }
+    return image;
   }
 
   void process_all(bool &succeeded, ImageInfo::SharedPtr &stacked_image) const {
@@ -211,35 +219,37 @@ private:
 
     const auto internal_ref_image = to_stacking_format(ref_image);
     const auto internal_image = to_stacking_format(image);
+
     if (align) {
       ImageAligner aligner;
       const auto ref_aligned = aligner.align(internal_ref_image);
       const auto image_aligned = aligner.align(internal_image);
-      if ((ref_aligned != nullptr) && (image_aligned != nullptr)) {
-        return stack_pair(image_aligned, ref_aligned);
-      }
-    } else {
-      if ((internal_image != nullptr) && (internal_ref_image != nullptr)) {
-        return stack_pair(internal_image, internal_ref_image);
-      }
+      return stack_pair(image_aligned, ref_aligned);
     }
 
-    return ref_image;
+    return stack_pair(internal_image, internal_ref_image);
   }
 
   [[nodiscard]] ImageInfo::SharedPtr
   to_stacking_format(const ImageInfo::SharedPtr image) const {
+    constexpr auto dtype = CV_32FC3;
+
+    if (image->image().type() == dtype) {
+      return image;
+    }
+
     cv::Mat internal_image;
-    image->image().convertTo(internal_image, CV_32FC3);
+    image->image().convertTo(internal_image, dtype);
     return ImageInfo::with_image(*image, internal_image);
   }
 
   [[nodiscard]] ImageInfo::SharedPtr stack_pair(const auto image,
                                                 const auto bottom_image) const {
-    auto stacker = m_new_stacker();
-    stacker->add(bottom_image->image());
-    stacker->add(image->image());
-    return ImageInfo::with_image(*image, stacker->partial_sum());
+    if ((image != nullptr) && (bottom_image != nullptr)) {
+      return ImageInfo::with_image(*image,
+                                   bottom_image->image() + image->image());
+    }
+    return bottom_image;
   }
 };
 
