@@ -1,8 +1,7 @@
 #!/bin/sh
 set -e -u
 
-SCRIPT_DIR=$(dirname "$0")
-cd ${SCRIPT_DIR}/../
+cd $(dirname "$0")/../
 
 cmake -Bbuild/release -S. \
       -DCMAKE_BUILD_TYPE=Release \
