@@ -155,33 +155,30 @@ private:
   void process_all(bool &succeeded, ImageInfo::SharedPtr &stacked_image) const {
     succeeded = false;
     const auto count = m_images.size();
-    if (count < 3) {
+
+    if (count < 2) {
       if (count < 1) {
         std::cerr << "Can't align and stack -- need at least two images."
                   << std::endl;
       } else if (count == 1) {
         stacked_image = m_images.front().get();
         succeeded = true;
-      } else {
-        stacked_image = process_one(m_images.front().get(), 1,
-                                    m_images.back().get(), m_align);
-        succeeded = true;
       }
       return;
     }
 
-    const auto i_center = count / 2;
-
     // Alas, clang 14 doesn't support std::views.
     // TODO write tests to verify that all images are processed.
+    const auto left_count = count / 2;
+    const auto right_count = count - left_count;
+
     const auto left_result =
-        process_some(m_images.begin(), m_images.begin() + i_center, m_align);
-    const auto num_to_process = i_center + (((2 * i_center) < count) ? 1 : 0);
+        process_some(m_images.begin(), m_images.begin() + left_count, m_align);
     const auto right_result = process_some(
-        m_images.rbegin(), m_images.rbegin() + num_to_process, m_align);
+        m_images.rbegin(), m_images.rbegin() + right_count, m_align);
 
     if (!(left_result->empty() || right_result->empty())) {
-      stacked_image = process_one(left_result, 1, right_result, m_align);
+      stacked_image = process_one(left_result, right_result, m_align);
       succeeded = true;
     } else {
       std::cerr
@@ -192,21 +189,19 @@ private:
 
   [[nodiscard]] ImageInfo::SharedPtr
   process_some(const auto begin, const auto end, bool align) const {
-    size_t count = 1;
     auto fut_iter = begin;
     auto result = fut_iter->get();
     std::cout << result->path() << std::endl;
     for (++fut_iter; fut_iter != end; ++fut_iter) {
       auto image(fut_iter->get());
       std::cout << image->path() << std::endl;
-      result = process_one(result, count, image, align);
-      count += 1;
+      result = process_one(result, image, align);
     }
     return result;
   }
 
   [[nodiscard]] ImageInfo::SharedPtr
-  process_one(const ImageInfo::SharedPtr image, const size_t image_stack_count,
+  process_one(const ImageInfo::SharedPtr image,
               const ImageInfo::SharedPtr ref_image, bool align) const {
 
     if (!ref_image->same_extents(image)) {
