@@ -115,58 +115,57 @@ void report_size_mismatch(ImageInfo::SharedPtr ref_img,
             << ref_img->cols() << " x " << ref_img->rows() << ")" << std::endl;
 }
 
+using StackerFactory = std::function<IImageStacker::Ptr()>;
+
 struct MainStacker {
-  MainStacker(std::deque<ImageInfoFuture> &images,
-              IImageStacker::Ptr pair_stacker)
-      : m_images(images), m_pair_stacker(std::move(pair_stacker)) {}
+  MainStacker(std::deque<ImageInfoFuture> &images, StackerFactory new_stacker)
+      : m_images(images), m_new_stacker(std::move(new_stacker)) {}
 
   void add_dark_image(ImageInfo::SharedPtr dark_image) {
     m_dark_image = dark_image;
   }
 
-  [[nodiscard]] cv::Mat result8() {
-    make_final_stack();
-    return m_pair_stacker->result8();
-  }
+  [[nodiscard]] cv::Mat result8() { return make_final_stack()->result8(); }
 
-  [[nodiscard]] cv::Mat result16() {
-    make_final_stack();
-    return m_pair_stacker->result16();
-  }
+  [[nodiscard]] cv::Mat result16() { return make_final_stack()->result16(); }
 
 private:
   const std::deque<ImageInfoFuture> &m_images;
-  IImageStacker::Ptr m_pair_stacker;
+  StackerFactory m_new_stacker;
   ImageInfo::SharedPtr m_dark_image;
 
   ImageInfo::SharedPtr m_stacked{};
 
-  void make_final_stack() {
-    bool stack_succeeded = align_and_stack();
-    m_pair_stacker->clear();
-    if (stack_succeeded) {
-      m_pair_stacker->add(m_stacked->image() / m_images.size());
+  IImageStacker::Ptr make_final_stack() const {
+    auto result = m_new_stacker();
+    bool succeeded{false};
+    ImageInfo::SharedPtr stacked_image{};
+    process_all(succeeded, stacked_image);
+    if (succeeded) {
+      result->add(stacked_image->image() / m_images.size());
       if ((m_dark_image != nullptr) && !m_dark_image->empty()) {
-        m_pair_stacker->subtract(m_dark_image->image());
+        result->subtract(m_dark_image->image());
       }
     }
+    return result;
   }
 
-  bool align_and_stack() {
+  void process_all(bool &succeeded, ImageInfo::SharedPtr &stacked_image) const {
+    succeeded = false;
     const auto count = m_images.size();
     if (count < 3) {
       if (count < 1) {
         std::cerr << "Can't align and stack -- need at least two images."
                   << std::endl;
-        return false;
+      } else if (count == 1) {
+        stacked_image = m_images.front().get();
+        succeeded = true;
+      } else {
+        stacked_image =
+            process_one(m_images.front().get(), 1, m_images.back().get());
+        succeeded = true;
       }
-      if (count == 1) {
-        m_stacked = m_images.front().get();
-        return true;
-      }
-      m_stacked =
-          align_and_stack_one(m_images.front().get(), 1, m_images.back().get());
-      return true;
+      return;
     }
 
     const auto i_center = count / 2;
@@ -174,22 +173,22 @@ private:
     // Alas, clang 14 doesn't support std::views.
     // TODO write tests to verify that all images are processed.
     const auto left_result =
-        align_and_stack_some(m_images.begin(), m_images.begin() + i_center);
+        process_some(m_images.begin(), m_images.begin() + i_center);
     const auto num_to_process = i_center + (((2 * i_center) < count) ? 1 : 0);
-    const auto right_result = align_and_stack_some(
-        m_images.rbegin(), m_images.rbegin() + num_to_process);
+    const auto right_result =
+        process_some(m_images.rbegin(), m_images.rbegin() + num_to_process);
 
     if (!(left_result->empty() || right_result->empty())) {
-      m_stacked = align_and_stack_one(left_result, 1, right_result);
-      return true;
+      stacked_image = process_one(left_result, 1, right_result);
+      succeeded = true;
+    } else {
+      std::cerr
+          << "Can't align and stack.  At least one partial result is empty."
+          << std::endl;
     }
-    std::cerr << "Can't align and stack.  At least one partial result is empty."
-              << std::endl;
-
-    return false;
   }
 
-  ImageInfo::SharedPtr align_and_stack_some(const auto begin, const auto end) {
+  ImageInfo::SharedPtr process_some(const auto begin, const auto end) const {
     size_t count = 1;
     auto fut_iter = begin;
     auto result = fut_iter->get();
@@ -197,59 +196,55 @@ private:
     for (++fut_iter; fut_iter != end; ++fut_iter) {
       auto image(fut_iter->get());
       std::cout << image->path() << std::endl;
-      result = align_and_stack_one(result, count, image);
+      result = process_one(result, count, image);
       count += 1;
     }
     return result;
   }
 
   [[nodiscard]] ImageInfo::SharedPtr
-  align_and_stack_one(const ImageInfo::SharedPtr image,
-                      const size_t image_stack_count,
-                      const ImageInfo::SharedPtr ref_image) {
+  process_one(const ImageInfo::SharedPtr image, const size_t image_stack_count,
+              const ImageInfo::SharedPtr ref_image) const {
 
     if (!ref_image->same_extents(image)) {
       report_size_mismatch(ref_image, image);
       return ref_image;
     }
     ImageAligner aligner;
-    // Scale the ref image brightness to make both images roughly the same
-    // scale...
+    // Scale the ref image roughly match scale of (stacked) image.
     cv::Mat boosted_ref_mat = ref_image->image() * image_stack_count;
     auto boosted_ref = ImageInfo::with_image(*ref_image, boosted_ref_mat);
-    auto ref_aligned = aligner.align(to_internal_data_type(boosted_ref));
+    auto ref_aligned = aligner.align(to_stacking_format(boosted_ref));
 
-    auto image_aligned = aligner.align(to_internal_data_type(image));
+    auto image_aligned = aligner.align(to_stacking_format(image));
     if ((ref_aligned != nullptr) && (image_aligned != nullptr)) {
       return stack_pair(image_aligned, ref_aligned);
     }
     return ref_image;
   }
 
-  ImageInfo::SharedPtr to_internal_data_type(const ImageInfo::SharedPtr image) {
+  ImageInfo::SharedPtr
+  to_stacking_format(const ImageInfo::SharedPtr image) const {
     cv::Mat internal_image;
     image->image().convertTo(internal_image, CV_32FC3);
     return ImageInfo::with_image(*image, internal_image);
   }
 
-  [[nodiscard]] ImageInfo::SharedPtr
-  stack_pair(const ImageInfo::SharedPtr image,
-             const ImageInfo::SharedPtr bottom_image) {
-    m_pair_stacker->clear();
-    m_pair_stacker->add(bottom_image->image());
-    m_pair_stacker->add(image->image());
-
-    // auto psum = m_pair_stacker->partial_sum();
-    return ImageInfo::with_image(*image, m_pair_stacker->partial_sum());
+  [[nodiscard]] ImageInfo::SharedPtr stack_pair(const auto image,
+                                                const auto bottom_image) const {
+    auto stacker = m_new_stacker();
+    stacker->add(bottom_image->image());
+    stacker->add(image->image());
+    return ImageInfo::with_image(*image, stacker->partial_sum());
   }
 };
 
-IImageStacker::Ptr image_stacker(std::string_view method_id, double gamma) {
+StackerFactory image_stacker(std::string_view method_id, double gamma) {
   if (method_id == "m") {
-    return ImageStacker::mean(gamma);
+    return [gamma]() { return ImageStacker::mean(gamma); };
   }
   if (method_id == "s") {
-    return ImageStacker::stretch(gamma);
+    return [gamma]() { return ImageStacker::stretch(gamma); };
   }
   throw std::runtime_error("Unsupported STACKING_METHOD");
 }

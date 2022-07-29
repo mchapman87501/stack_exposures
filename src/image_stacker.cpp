@@ -34,14 +34,6 @@ struct Mean : public IImageStacker {
     }
   }
 
-  void clear() override {
-    m_image = cv::Mat();
-    m_dark_image = cv::Mat();
-    m_count = 0;
-    m_width = 0;
-    m_height = 0;
-  }
-
   [[nodiscard]] cv::Mat partial_sum() const override { return m_image; }
 
   [[nodiscard]] cv::Mat result8() const override {

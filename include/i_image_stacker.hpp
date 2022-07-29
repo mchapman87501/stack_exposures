@@ -27,11 +27,6 @@ struct IImageStacker {
   virtual void subtract(const cv::Mat &new_image) = 0;
 
   /**
-   * @brief      Clear all added and subtracted images.
-   */
-  virtual void clear() = 0;
-
-  /**
    * @brief      Get the result of stacking so far, without dark image
    * subtraction, averaging, etc.
    *
