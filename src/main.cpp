@@ -118,8 +118,10 @@ void report_size_mismatch(ImageInfo::SharedPtr ref_img,
 using StackerFactory = std::function<IImageStacker::Ptr()>;
 
 struct MainStacker {
-  MainStacker(std::deque<ImageInfoFuture> &images, StackerFactory new_stacker)
-      : m_images(images), m_new_stacker(std::move(new_stacker)) {}
+  MainStacker(std::deque<ImageInfoFuture> &images, StackerFactory new_stacker,
+              bool align)
+      : m_images(images), m_new_stacker(std::move(new_stacker)),
+        m_align(align) {}
 
   void add_dark_image(ImageInfo::SharedPtr dark_image) {
     m_dark_image = dark_image;
@@ -131,12 +133,12 @@ struct MainStacker {
 
 private:
   const std::deque<ImageInfoFuture> &m_images;
-  StackerFactory m_new_stacker;
+  const StackerFactory m_new_stacker;
+  const bool m_align;
+
   ImageInfo::SharedPtr m_dark_image;
 
-  ImageInfo::SharedPtr m_stacked{};
-
-  IImageStacker::Ptr make_final_stack() const {
+  [[nodiscard]] IImageStacker::Ptr make_final_stack() const {
     auto result = m_new_stacker();
     bool succeeded{false};
     ImageInfo::SharedPtr stacked_image{};
@@ -161,8 +163,8 @@ private:
         stacked_image = m_images.front().get();
         succeeded = true;
       } else {
-        stacked_image =
-            process_one(m_images.front().get(), 1, m_images.back().get());
+        stacked_image = process_one(m_images.front().get(), 1,
+                                    m_images.back().get(), m_align);
         succeeded = true;
       }
       return;
@@ -173,13 +175,13 @@ private:
     // Alas, clang 14 doesn't support std::views.
     // TODO write tests to verify that all images are processed.
     const auto left_result =
-        process_some(m_images.begin(), m_images.begin() + i_center);
+        process_some(m_images.begin(), m_images.begin() + i_center, m_align);
     const auto num_to_process = i_center + (((2 * i_center) < count) ? 1 : 0);
-    const auto right_result =
-        process_some(m_images.rbegin(), m_images.rbegin() + num_to_process);
+    const auto right_result = process_some(
+        m_images.rbegin(), m_images.rbegin() + num_to_process, m_align);
 
     if (!(left_result->empty() || right_result->empty())) {
-      stacked_image = process_one(left_result, 1, right_result);
+      stacked_image = process_one(left_result, 1, right_result, m_align);
       succeeded = true;
     } else {
       std::cerr
@@ -188,7 +190,8 @@ private:
     }
   }
 
-  ImageInfo::SharedPtr process_some(const auto begin, const auto end) const {
+  [[nodiscard]] ImageInfo::SharedPtr
+  process_some(const auto begin, const auto end, bool align) const {
     size_t count = 1;
     auto fut_iter = begin;
     auto result = fut_iter->get();
@@ -196,7 +199,7 @@ private:
     for (++fut_iter; fut_iter != end; ++fut_iter) {
       auto image(fut_iter->get());
       std::cout << image->path() << std::endl;
-      result = process_one(result, count, image);
+      result = process_one(result, count, image, align);
       count += 1;
     }
     return result;
@@ -204,26 +207,32 @@ private:
 
   [[nodiscard]] ImageInfo::SharedPtr
   process_one(const ImageInfo::SharedPtr image, const size_t image_stack_count,
-              const ImageInfo::SharedPtr ref_image) const {
+              const ImageInfo::SharedPtr ref_image, bool align) const {
 
     if (!ref_image->same_extents(image)) {
       report_size_mismatch(ref_image, image);
       return ref_image;
     }
-    ImageAligner aligner;
-    // Scale the ref image roughly match scale of (stacked) image.
-    cv::Mat boosted_ref_mat = ref_image->image() * image_stack_count;
-    auto boosted_ref = ImageInfo::with_image(*ref_image, boosted_ref_mat);
-    auto ref_aligned = aligner.align(to_stacking_format(boosted_ref));
 
-    auto image_aligned = aligner.align(to_stacking_format(image));
-    if ((ref_aligned != nullptr) && (image_aligned != nullptr)) {
-      return stack_pair(image_aligned, ref_aligned);
+    const auto internal_ref_image = to_stacking_format(ref_image);
+    const auto internal_image = to_stacking_format(image);
+    if (align) {
+      ImageAligner aligner;
+      const auto ref_aligned = aligner.align(internal_ref_image);
+      const auto image_aligned = aligner.align(internal_image);
+      if ((ref_aligned != nullptr) && (image_aligned != nullptr)) {
+        return stack_pair(image_aligned, ref_aligned);
+      }
+    } else {
+      if ((internal_image != nullptr) && (internal_ref_image != nullptr)) {
+        return stack_pair(internal_image, internal_ref_image);
+      }
     }
+
     return ref_image;
   }
 
-  ImageInfo::SharedPtr
+  [[nodiscard]] ImageInfo::SharedPtr
   to_stacking_format(const ImageInfo::SharedPtr image) const {
     cv::Mat internal_image;
     image->image().convertTo(internal_image, CV_32FC3);
@@ -282,40 +291,14 @@ int main(int argc, char *argv[]) {
 
   AsyncImageLoader loader(opt.images());
   auto futures = loader.futures();
-  MainStacker main_stacker(futures, image_stacker(opt.method(), opt.gamma()));
+  MainStacker main_stacker(futures, image_stacker(opt.method(), opt.gamma()),
+                           opt.align());
 
   if (!opt.dark_image().empty()) {
     ImageLoader loader;
     auto dark_image = loader.load_image(opt.dark_image());
     main_stacker.add_dark_image(dark_image);
   }
-
-  // ImageAligner aligner;
-  // ImageInfo::SharedPtr ref_img(nullptr);
-
-  // for (auto fut : loader.futures()) {
-  //   ImageInfo::SharedPtr img_info = fut.get();
-  //   std::cout << img_info->path() << std::endl << std::flush;
-
-  //   if (!ref_img) {
-  //     ref_img = img_info;
-  //   }
-
-  //   if (ref_img->same_extents(img_info)) {
-  //     auto aligned = opt.align() ? aligner.align(img_info) : img_info;
-  //     if (aligned != nullptr) {
-  //       stacker->add(aligned->image());
-  //     }
-  //   } else {
-  //     report_size_mismatch(ref_img, img_info);
-  //   }
-  // }
-
-  // if (!opt.dark_image().empty()) {
-  //   ImageLoader loader;
-  //   auto dark_image = loader.load_image(opt.dark_image());
-  //   stacker->subtract(dark_image->image());
-  // }
 
   const auto output_pathname(opt.output_pathname());
   const auto final_image =

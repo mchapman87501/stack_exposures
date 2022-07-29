@@ -49,7 +49,7 @@ struct ImageInfo {
    *
    * @return     The pathname with which this image is associated
    */
-  const std::filesystem::path &path() const;
+  [[nodiscard]] const std::filesystem::path &path() const;
 
   /**
    * @brief      Find out whether other_info has the same dimensions as this
@@ -59,21 +59,21 @@ struct ImageInfo {
    *
    * @return     true iff this and other_info have the same width and height
    */
-  bool same_extents(ImageInfo::SharedPtr other_info) const;
+  [[nodiscard]] bool same_extents(ImageInfo::SharedPtr other_info) const;
 
   /**
    * @brief      Get the height (number of rows) of this instance.
    *
    * @return     The number of rows of this instance's image()
    */
-  size_t rows() const;
+  [[nodiscard]] size_t rows() const;
 
   /**
    * @brief      Get the width (number of columns) of this instance.
    *
    * @return     The number of columns of this instance's image()
    */
-  size_t cols() const;
+  [[nodiscard]] size_t cols() const;
 
   /**
    * @brief      Find out whether this instance holds an empty image.
@@ -87,7 +87,7 @@ struct ImageInfo {
    *
    * @return     The OpenCV image data
    */
-  const cv::Mat &image() const;
+  [[nodiscard]] const cv::Mat &image() const;
 
 protected:
   /**
@@ -96,7 +96,7 @@ protected:
    * @param[in]  path   Path of the image file
    * @param      image  OpenCV image data for the image
    */
-  ImageInfo(std::filesystem::path path, const cv::Mat &image);
+  ImageInfo(std::filesystem::path path, cv::Mat image);
 
   /**
    * @brief      Constructs a new instance.
@@ -114,7 +114,7 @@ protected:
    * @param[in]  src    ImageInfo instance with image metainfo
    * @param      image  New OpenCV image data
    */
-  ImageInfo(const ImageInfo &src, const cv::Mat &image);
+  ImageInfo(const ImageInfo &src, cv::Mat image);
 
   ImageInfo(const ImageInfo &src) = delete;
   ImageInfo(ImageInfo &&src) = delete;

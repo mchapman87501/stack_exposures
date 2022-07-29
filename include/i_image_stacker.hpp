@@ -32,20 +32,20 @@ struct IImageStacker {
    *
    * @return     The sum of all images stacked so far, in 32FC3 format.
    */
-  virtual cv::Mat partial_sum() const = 0;
+  [[nodiscard]] virtual cv::Mat partial_sum() const = 0;
 
   /**
    * @brief Get the stacked composite image.
    *
    * @return cv::Mat An 8-bit, 3 channel image
    */
-  virtual cv::Mat result8() const = 0;
+  [[nodiscard]] virtual cv::Mat result8() const = 0;
 
   /**
    * @brief Get the stacked composite image.
    *
    * @return cv::Mat A 16-bit, 3-channel image
    */
-  virtual cv::Mat result16() const = 0;
+  [[nodiscard]] virtual cv::Mat result16() const = 0;
 };
 } // namespace StackExposures

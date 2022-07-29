@@ -22,8 +22,8 @@ ImageInfo::SharedPtr ImageInfo::with_image(const ImageInfo &src,
   return std::shared_ptr<ImageInfo>(new ImageInfo(src, image));
 }
 
-ImageInfo::ImageInfo(std::filesystem::path path, const cv::Mat &image)
-    : m_path(std::move(path)), m_raw_img(nullptr), m_image(image) {}
+ImageInfo::ImageInfo(std::filesystem::path path, cv::Mat image)
+    : m_path(std::move(path)), m_raw_img(nullptr), m_image(std::move(image)) {}
 
 ImageInfo::ImageInfo(LibRawSharedPtr processor, std::filesystem::path path,
                      libraw_processed_image_t *raw_img)
@@ -39,8 +39,8 @@ ImageInfo::ImageInfo(LibRawSharedPtr processor, std::filesystem::path path,
   cv::cvtColor(from_raw, m_image, cv::COLOR_RGB2BGR);
 }
 
-ImageInfo::ImageInfo(const ImageInfo &src, const cv::Mat &image)
-    : m_path(src.m_path), m_raw_img(src.m_raw_img), m_image(image) {}
+ImageInfo::ImageInfo(const ImageInfo &src, cv::Mat image)
+    : m_path(src.m_path), m_raw_img(src.m_raw_img), m_image(std::move(image)) {}
 
 const std::filesystem::path &ImageInfo::path() const { return m_path; }
 
