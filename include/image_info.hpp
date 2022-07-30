@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <future>
 #include <memory>
 
 #include "libraw.h"
@@ -126,4 +127,7 @@ private:
   LibRawProcessedImageSharedPtr m_raw_img;
   cv::Mat m_image;
 };
+
+using ImageInfoFuture = std::shared_future<ImageInfo::SharedPtr>;
+
 } // namespace StackExposures

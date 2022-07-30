@@ -1,183 +1,179 @@
 #include "image_stacker.hpp"
-#include <iostream>
-
-#include <memory>
-#include <opencv2/core.hpp>
-#include <opencv2/imgproc.hpp>
 
 namespace StackExposures {
-
 namespace {
 
-struct Mean : public IImageStacker {
-  Mean(double gamma) : m_image(), m_dark_image(), m_gamma(gamma) {}
+constexpr auto image_dtype = CV_32FC3;
 
-  void add(const cv::Mat &new_image) override {
-    if ((m_width == 0) && (m_height == 0)) {
-      m_width = new_image.cols;
-      m_height = new_image.rows;
-      m_image = cv::Mat(m_height, m_width, CV_32FC3, cv::Scalar(0, 0, 0));
-    }
-    // new_image must be the same size.
-    if (check_size(new_image, "image")) {
-      cv::Mat sum;
-      cv::add(m_image, new_image, sum, cv::noArray(), CV_32FC3);
-      m_image = sum;
-
-      m_count += 1;
-    }
+[[nodiscard]] cv::Mat stackable(const cv::Mat &image) {
+  if (image.type() == image_dtype) {
+    return image;
   }
 
-  void subtract(const cv::Mat &new_image) override {
-    if (m_dark_image.empty()) {
-      new_image.convertTo(m_dark_image, CV_32FC3);
+  cv::Mat result;
+  image.convertTo(result, image_dtype);
+  return result;
+}
+
+struct StackedImage {
+  cv::Mat m_image;
+  size_t m_num_used{0}; // number of images used to compute m_image
+
+  StackedImage() {}
+
+  StackedImage(const cv::Mat &image, size_t num_used)
+      : m_image(stackable(image)), m_num_used(num_used) {}
+
+  StackedImage(const cv::Mat &single_image)
+      : m_image(stackable(single_image)), m_num_used(1) {}
+
+  bool succeeded() const { return (m_num_used > 0) && !m_image.empty(); }
+  bool empty() const { return m_image.empty(); }
+  bool same_extents(const StackedImage &other) const {
+    return (m_image.rows == other.m_image.rows) &&
+           (m_image.cols == other.m_image.cols);
+  }
+};
+
+struct Impl : public ImageStacker {
+
+  Impl() {}
+
+  [[nodiscard]] cv::Mat stacked_result(const ImageInfoFutureContainer &images,
+                                       ImageInfo::SharedPtr dark_image,
+                                       bool align) const override {
+    auto result = process_all(images, align);
+    if (result.succeeded()) {
+      cv::Mat mean = result.m_image / result.m_num_used;
+      if (dark_image != nullptr) {
+        return darkened(mean, dark_image->image());
+      }
+      return mean;
     }
-  }
-
-  [[nodiscard]] cv::Mat partial_sum() const override { return m_image; }
-
-  [[nodiscard]] cv::Mat result8() const override {
-    return converted(1, CV_8UC3);
-  }
-
-  [[nodiscard]] cv::Mat result16() const override {
-    return converted(0xFF, CV_16UC3);
-  }
-
-protected:
-  [[nodiscard]] cv::Mat virtual converted(size_t scale,
-                                          int cv_img_format) const {
-    if (empty()) {
-      // No images were added.
-      return {};
-    }
-
-    cv::Mat rescaled = with_gamma(darkened()) * scale;
-
-    // Convert from CV_32FC3 to cv_img_format.
-    cv::Mat result;
-    rescaled.convertTo(result, cv_img_format);
-
-    return result;
-  }
-
-  [[nodiscard]] cv::Mat with_gamma(const cv::Mat &image) const {
-    //
-    if (::abs(m_gamma - 1.0) <= 1.0e-6) {
-      return image;
-    }
-
-    // Apply sRGB gamma to image.  Assume image has depth CV_32F, with values in
-    // 0...255. See LibRaw's tiff.cpp.  Also see
-    // https://pyimagesearch.com/2015/10/05/opencv-gamma-correction/
-    // https://www.libraw.org/docs/API-datastruct.html#libraw_output_params_t
-
-    const auto normed = image / 255.0;
-    const double power = 1.0 / m_gamma;
-    cv::Mat gamma_applied;
-    cv::pow(normed, power, gamma_applied);
-    return gamma_applied * 255.0;
-  }
-
-  [[nodiscard]] bool empty() const { return m_count == 0; }
-
-  [[nodiscard]] cv::Mat darkened() const {
-    cv::Mat mean = m_image / m_count;
-
-    if (!m_dark_image.empty() && check_size(m_dark_image, "dark image")) {
-      // NB this can result in negative pixel values.
-      // Rely on convertTo to clip to 0.
-      return mean - m_dark_image;
-    }
-    return mean;
+    return cv::Mat(0, 0, image_dtype);
   }
 
 private:
-  const double m_gamma{2.4};
-
-  size_t m_width{0};
-  size_t m_height{0};
-
-  size_t m_count{0};
-
-  cv::Mat m_image;
-  cv::Mat m_dark_image;
-
-  [[nodiscard]] bool check_size(const cv::Mat &new_image,
-                                std::string_view descr) const {
-    if ((new_image.cols != m_width) || (new_image.rows != m_height)) {
-      std::cerr << descr << " (width x height) "
-                << "(" << new_image.cols << " x " << new_image.rows
-                << ")  is incompatible with established size "
-                << "(" << m_width << " x " << m_height << ")." << std::endl;
-      return false;
-    }
-    return true;
+  void report_size_mismatch(ImageInfo::SharedPtr ref_img,
+                            ImageInfo::SharedPtr img_info) const {
+    report_size_mismatch(ref_img->image(), img_info->image(),
+                         img_info->path().string());
   }
-};
 
-struct Stretch : public Mean {
-  Stretch(double gamma) : Mean(gamma) {}
+  void report_size_mismatch(const cv::Mat &ref_image, const cv::Mat &image,
+                            std::string_view image_name) const {
+    std::cerr << "Cannot process " << image_name.data()
+              << ": image width x height (" << image.cols << " x " << image.rows
+              << ") do not match first image (" << ref_image.cols << " x "
+              << ref_image.rows << ")" << std::endl;
+  }
 
-protected:
-  [[nodiscard]] cv::Mat converted(size_t scale,
-                                  int cv_img_format) const override {
-    // Goal: Rescale the summed BGR values so that the corresponding
-    // hue and saturation are unchanged, but the value extends across 0...Vmax.
+  void report_empty() const {
+    std::cerr << "Cannot process empty image." << std::endl;
+  }
 
-    if (empty()) {
-      return {};
+  [[nodiscard]] cv::Mat darkened(const cv::Mat &image,
+                                 const cv::Mat &dark_image) const {
+    const auto dark = stackable(dark_image);
+    if ((image.rows == dark.rows) && (image.cols == dark.cols)) {
+      auto result(image - dark);
+      return result;
+    }
+    return image;
+  }
+
+  StackedImage process_all(const ImageInfoFutureContainer &images,
+                           bool align) const {
+    const auto count = images.size();
+
+    if (count < 3) {
+      if (count < 1) {
+        std::cerr << "Can't align and stack -- need at least one image."
+                  << std::endl;
+        return {};
+      } else if (count == 1) {
+        return {images[0].get()->image()};
+      }
+      StackedImage s1(images[0].get()->image());
+      StackedImage s2(images[1].get()->image());
+      return align_and_stack(s1, s2, align);
     }
 
-    cv::Mat mean_hsv;
-    cv::cvtColor(darkened(), mean_hsv, cv::COLOR_BGR2HSV);
+    // Alas, clang 14 doesn't support std::views.
+    // TODO write tests to verify that all images are processed.
+    const auto left_count = count / 2;
+    const auto right_count = count - left_count;
 
-    cv::Mat stretched_hsv;
-    stretch_hsv_channel(mean_hsv, stretched_hsv);
+    const auto left_result =
+        process_some(images.begin(), images.begin() + left_count, align);
+    const auto right_result =
+        process_some(images.rbegin(), images.rbegin() + right_count, align);
 
-    cv::Mat stretched_bgr;
-    cv::cvtColor(stretched_hsv, stretched_bgr, cv::COLOR_HSV2BGR);
+    if (left_result.succeeded() && right_result.succeeded()) {
+      return align_and_stack(left_result, right_result, align);
+    }
+    std::cerr << "Can't align and stack.  At least one partial result is empty."
+              << std::endl;
 
-    cv::Mat rescaled = with_gamma(stretched_bgr) * scale;
+    return {};
+  }
 
-    // Convert from CV_32FC3 to cv_img_format.
-    cv::Mat result;
-    rescaled.convertTo(result, cv_img_format);
+  [[nodiscard]] StackedImage process_some(const auto begin, const auto end,
+                                          bool align) const {
+    auto fut_iter = begin;
+    const auto info = fut_iter->get();
+    std::cout << info->path() << std::endl;
+
+    // At every step, (align and) stack the pile of images already processed,
+    // onto the next image.  This shifts the whole pile of processed images, a
+    // little at a time, to align it with the next image in the sequence.
+
+    StackedImage result(info->image());
+
+    for (++fut_iter; fut_iter != end; ++fut_iter) {
+      const auto next_info(fut_iter->get());
+      StackedImage next_image(next_info->image());
+      std::cout << next_info->path() << std::endl;
+
+      result = align_and_stack(result, next_image, align);
+    }
     return result;
   }
 
-  void stretch_hsv_channel(const cv::Mat &hsv, cv::Mat &result) const {
-    std::vector<cv::Mat> channels;
-    cv::split(hsv, channels);
+  [[nodiscard]] StackedImage align_and_stack(const StackedImage &unaligned,
+                                             const StackedImage &target,
+                                             bool align) const {
 
-    double min_val = 0.0;
-    double max_val = 0.0;
-    cv::minMaxIdx(channels[2], &min_val, &max_val);
-
-    // If all values are the same, do not adjust.
-    if (max_val > min_val) {
-      // I don't know the range of V values for CV_32FC3.
-      // The OpenCV documentation suggests it should be 0..1, but that
-      // appears to be untrue for my images.  Likely reason: they
-      // are CV_32FC3, accumulating (presumably) 8-bit components.
-      constexpr double out_max = 255.0;
-      cv::Mat new_v_chan =
-          out_max * (channels[2] - min_val) / (max_val - min_val);
-      channels[2] = new_v_chan;
-      cv::merge(channels, result);
-    } else {
-      result = hsv;
+    if (unaligned.empty() || target.empty()) {
+      report_empty();
+      return {};
     }
+    if (!unaligned.same_extents(target)) {
+      report_size_mismatch(target.m_image, unaligned.m_image, "image pair");
+      return unaligned;
+    }
+
+    if (align) {
+      ImageAligner aligner;
+      cv::Mat aligned_image; // Will hold internal_image, aligned to
+                             // internal_target.
+      aligner.align(target.m_image, unaligned.m_image, aligned_image);
+
+      StackedImage aligned(aligned_image, unaligned.m_num_used);
+      return stack_pair(aligned, target);
+    }
+
+    return stack_pair(unaligned, target);
+  }
+
+  [[nodiscard]] StackedImage stack_pair(const auto &top_image,
+                                        const auto &bottom_image) const {
+    return {top_image.m_image + bottom_image.m_image,
+            top_image.m_num_used + bottom_image.m_num_used};
   }
 };
-
 } // namespace
 
-namespace ImageStacker {
-IImageStacker::Ptr mean(double gamma) { return std::make_unique<Mean>(gamma); }
-IImageStacker::Ptr stretch(double gamma) {
-  return std::make_unique<Stretch>(gamma);
-}
-} // namespace ImageStacker
+ImageStacker::Ptr ImageStacker::create() { return std::make_unique<Impl>(); }
 
 } // namespace StackExposures

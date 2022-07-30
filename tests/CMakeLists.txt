@@ -41,6 +41,21 @@ target_link_libraries(
   PRIVATE Catch2::Catch2WithMain ${OpenCV_LIBS} ${LibRaw_LIBRARIES})
 catch_discover_tests(test_image_loader)
 
+add_executable(test_image_stacker src/test_image_stacker.cpp)
+set(TEST_DATA_DIR "${CMAKE_SOURCE_DIR}/tests/data/")
+target_compile_definitions(test_image_stacker
+                           PUBLIC TEST_DATA_DIR="${TEST_DATA_DIR}")
+target_compile_features(test_image_stacker PUBLIC cxx_std_20)
+target_include_directories(
+  test_image_stacker
+  PUBLIC ../include
+  PRIVATE ${OpenCV_INCLUDE_DIRS} ${LibRaw_INCLUDE_DIR})
+target_link_libraries(
+  test_image_stacker
+  PUBLIC stack_exp_cov
+  PRIVATE Catch2::Catch2WithMain ${OpenCV_LIBS} ${LibRaw_LIBRARIES})
+catch_discover_tests(test_image_stacker)
+
 add_executable(test_image_aligner src/test_image_aligner.cpp)
 target_compile_definitions(test_image_aligner
                            PUBLIC TEST_DATA_DIR="${TEST_DATA_DIR}")
@@ -56,34 +71,6 @@ target_link_libraries(
   PRIVATE Catch2::Catch2WithMain arg_parse::arg_parse ${OpenCV_LIBS}
           ${LibRaw_LIBRARIES})
 catch_discover_tests(test_image_aligner)
-
-add_executable(test_stretch_image_stacker src/test_stretch_image_stacker.cpp)
-target_compile_features(test_stretch_image_stacker PUBLIC cxx_std_20)
-target_include_directories(
-  test_stretch_image_stacker
-  PUBLIC ../include
-  PRIVATE ${arg_parse_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS}
-          ${LibRaw_INCLUDE_DIR})
-target_link_libraries(
-  test_stretch_image_stacker
-  PUBLIC stack_exp_cov
-  PRIVATE Catch2::Catch2WithMain arg_parse::arg_parse ${OpenCV_LIBS}
-          ${LibRaw_LIBRARIES})
-catch_discover_tests(test_stretch_image_stacker)
-
-add_executable(test_mean_image_stacker src/test_mean_image_stacker.cpp)
-target_compile_features(test_mean_image_stacker PUBLIC cxx_std_20)
-target_include_directories(
-  test_mean_image_stacker
-  PUBLIC ../include
-  PRIVATE ${arg_parse_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS}
-          ${LibRaw_INCLUDE_DIR})
-target_link_libraries(
-  test_mean_image_stacker
-  PUBLIC stack_exp_cov
-  PRIVATE Catch2::Catch2WithMain arg_parse::arg_parse ${OpenCV_LIBS}
-          ${LibRaw_LIBRARIES})
-catch_discover_tests(test_mean_image_stacker)
 
 # Integration test:
 add_executable(stack_exposures_cov ../src/main.cpp)
@@ -119,13 +106,6 @@ add_test(NAME positive_integration_test_no_align
          COMMAND stack_exposures_cov --no-align -o "pit_unaligned_result.jpg"
                  ${pit_img} ${pit_img} ${pit_img} ${pit_img})
 
-add_test(NAME positive_integration_test_method_m
-         COMMAND stack_exposures_cov -o "pit_mm.png" --stacking-method m
-                 ${pit_img} ${pit_img})
-
-add_test(NAME positive_integration_test_method_s
-         COMMAND stack_exposures_cov -o "pit_ms.png" -s s ${pit_img} ${pit_img})
-
 add_test(NAME invalid_stacking_method
          COMMAND stack_exposures_cov -o "ism.png" --stacking-method= ${pit_img}
                  ${pit_img})
@@ -149,24 +129,19 @@ set_tests_properties(
   stack_exposures_multiple_image_sizes
   PROPERTIES WILL_FAIL true FAIL_REGULAR_EXPRESSION "Cannot process")
 
-foreach(stacking_method m s)
-  foreach(suffix IN ITEMS jpg png tif tiff)
-    set(test_name "stack_exposures_suffix_${stacking_method}_${suffix}")
-    message(STATUS "Test name is ${test_name}")
-    add_test(NAME ${test_name}
-             COMMAND stack_exposures_cov --stacking-method=${stacking_method}
-                     -o "pit_suffix.${suffix}" ${pit_img} ${pit_img})
-  endforeach()
+foreach(suffix IN ITEMS jpg png tif tiff)
+  set(test_name "stack_exposures_suffix_${suffix}")
+  message(STATUS "Test name is ${test_name}")
+  add_test(NAME ${test_name}
+           COMMAND stack_exposures_cov -o "pit_suffix.${suffix}" ${pit_img}
+                   ${pit_img})
 endforeach()
 
 # This is ridiculous.  It should produce black images but doesn't verify as
 # much. It merely verifies that "-d <dark_image>" is valid usage.
-foreach(stacking_method m s)
-  add_test(
-    NAME stack_exposures_darken_${stacking_method}
-    COMMAND stack_exposures_cov -s ${stacking_method} -o
-            "darken_${stacking_method}.png" -d ${pit_img} ${pit_img} ${pit_img})
-endforeach()
+add_test(NAME stack_exposures_darken
+         COMMAND stack_exposures_cov -o "darken_${stacking_method}.png" -d
+                 ${pit_img} ${pit_img} ${pit_img})
 
 get_target_property(CATCH2_INCLUDE_DIRS Catch2::Catch2
                     INTERFACE_INCLUDE_DIRECTORIES)
@@ -184,8 +159,7 @@ setup_target_for_coverage_lcov(
   test_image_info
   test_image_loader
   test_image_aligner
-  test_stretch_image_stacker
-  test_mean_image_stacker
+  test_image_stacker
   stack_exposures_cov
   EXCLUDE
   "include/*"

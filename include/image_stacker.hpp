@@ -1,31 +1,27 @@
 #pragma once
 
-#include "i_image_stacker.hpp"
+#include <iostream>
+#include <memory>
+#include <vector>
+
+#include "image_aligner.hpp"
+#include "image_info.hpp"
 
 namespace StackExposures {
 
-namespace ImageStacker {
-/**
- * @brief      Get an image stacker that provides the average of its stacked
- * images.
- *
- * @param[in] gamma  gamma correction factor, e.g., 2.4.  A value of 1
- * results in no gamma correction.
- *
- * @return     A mean-image stacker
- */
-IImageStacker::Ptr mean(double gamma);
+using ImageInfoFutureContainer = std::vector<ImageInfoFuture>;
 
-/**
- * @brief      Get an image stacker that provides an average of its stacked
- * images, with stretched brightness range.
- *
- * @param[in] gamma  gamma correction factor, e.g., 2.4.  A value of 1 results
- * in no gamma correction.
- *
- * @return     A stretched-brightness stacker
- */
-IImageStacker::Ptr stretch(double gamma);
+struct ImageStacker {
+  using Ptr = std::unique_ptr<ImageStacker>;
 
-} // namespace ImageStacker
+  virtual ~ImageStacker() = default;
+
+  static Ptr create();
+
+  [[nodiscard]] virtual cv::Mat
+  stacked_result(const ImageInfoFutureContainer &images,
+                 ImageInfo::SharedPtr dark_image = nullptr,
+                 bool align = true) const = 0;
+};
+
 } // namespace StackExposures
