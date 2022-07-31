@@ -106,12 +106,11 @@ add_test(NAME positive_integration_test_no_align
          COMMAND stack_exposures_cov --no-align -o "pit_unaligned_result.jpg"
                  ${pit_img} ${pit_img} ${pit_img} ${pit_img})
 
-add_test(NAME invalid_stacking_method
-         COMMAND stack_exposures_cov -o "ism.png" --stacking-method= ${pit_img}
-                 ${pit_img})
+add_test(NAME invalid_output_format COMMAND stack_exposures_cov -o "ism.bogus"
+                                            ${pit_img} ${pit_img})
 set_tests_properties(
-  invalid_stacking_method PROPERTIES WILL_FAIL true FAIL_REGULAR_EXPRESSION
-                                     "STACKING_METHOD")
+  invalid_output_format PROPERTIES WILL_FAIL true FAIL_REGULAR_EXPRESSION
+                                   "not supported")
 
 add_test(NAME stack_exposures_no_args_given COMMAND stack_exposures_cov)
 set_tests_properties(stack_exposures_no_args_given
@@ -140,8 +139,8 @@ endforeach()
 # This is ridiculous.  It should produce black images but doesn't verify as
 # much. It merely verifies that "-d <dark_image>" is valid usage.
 add_test(NAME stack_exposures_darken
-         COMMAND stack_exposures_cov -o "darken_${stacking_method}.png" -d
-                 ${pit_img} ${pit_img} ${pit_img})
+         COMMAND stack_exposures_cov -o "darken_.png" -d ${pit_img} ${pit_img}
+                 ${pit_img})
 
 get_target_property(CATCH2_INCLUDE_DIRS Catch2::Catch2
                     INTERFACE_INCLUDE_DIRECTORIES)

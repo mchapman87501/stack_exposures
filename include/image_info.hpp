@@ -77,13 +77,6 @@ struct ImageInfo {
   [[nodiscard]] size_t cols() const;
 
   /**
-   * @brief      Find out whether this instance holds an empty image.
-   *
-   * @return     True iff this instance holds an empty image.
-   */
-  [[nodiscard]] bool empty() const;
-
-  /**
    * @brief      Get the OpenCV image data for this instance.
    *
    * @return     The OpenCV image data

@@ -1,7 +1,6 @@
 #include <iostream>
 
 #include <cctype>
-#include <deque>
 #include <future>
 #include <semaphore>
 
@@ -17,8 +16,21 @@ using namespace StackExposures;
 
 namespace {
 
-static const std::string default_out_pathname("stacked.tiff");
-static constexpr double default_gamma(2.4);
+const std::string default_out_pathname("stacked.tiff");
+const std::vector<std::string> supported_extensions{".tif", ".tiff", ".png",
+                                                    ".jpg", ".jpeg"};
+
+auto lowercase_extension(std::string_view filename) {
+  std::filesystem::path pathname(filename);
+
+  return StrUtil::lowercase(pathname.extension().string());
+}
+
+bool supported_format(std::string_view image_filename) {
+  const auto ext = lowercase_extension(image_filename);
+  return (std::find(supported_extensions.begin(), supported_extensions.end(),
+                    ext) != supported_extensions.end());
+}
 
 class CmdOption {
   ArgParse::ArgumentParser::Ptr m_parser;
@@ -49,6 +61,18 @@ public:
         m_parser, "image", ArgParse::Nargs::one_or_more, "Stack these images.");
 
     m_parser->parse_args(argc, argv);
+
+    const auto path_str(m_output_path->value().string());
+    if (!supported_format(path_str)) {
+      std::ostringstream outs;
+      outs << "Output format '" << lowercase_extension(path_str)
+           << "' is not supported." << std::endl
+           << "Please use one of these extensions when specifying output-path:";
+      for (const auto &ext : supported_extensions) {
+        outs << " '" << ext << "'";
+      }
+      m_parser->show_error(outs.str(), 1);
+    }
   }
 
   [[nodiscard]] bool should_exit() const { return m_parser->should_exit(); }
@@ -90,14 +114,6 @@ private:
   ImageInfoFutureContainer m_futures;
 };
 
-std::string filename_suffix(std::string_view filename) {
-  auto index = filename.find_last_of('.');
-  if (index != std::string::npos) {
-    return std::string(filename.substr(index));
-  }
-  return "";
-}
-
 auto formatted_for_output(const cv::Mat &stacking_image,
                           std::string_view filename) {
   // stacking_image should be in MainStacker's format, which will use
@@ -106,11 +122,14 @@ auto formatted_for_output(const cv::Mat &stacking_image,
   cv::Mat scaled(stacking_image);
   auto output_type{CV_8UC3};
 
-  auto suffix = StrUtil::lowercase(filename_suffix(filename));
+  std::filesystem::path pathname(filename);
+
+  auto suffix = StrUtil::lowercase(pathname.extension().string());
   if ((suffix == ".tiff") || (suffix == ".tif") || (suffix == ".png")) {
     scaled = stacking_image * 0xFF;
     output_type = CV_16UC3;
   }
+
   cv::Mat result;
   scaled.convertTo(result, output_type);
   return result;
