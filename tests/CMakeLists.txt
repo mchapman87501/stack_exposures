@@ -167,6 +167,7 @@ setup_target_for_coverage_lcov(
   "/Applications/*" # Exclude C++ headers that reside under Xcode
   "/usr/*"
   ${CATCH2_COV_EXC}
+  "/**/arg_parse-src/*"
   "${OpenCV_INSTALL_PATH}/*")
 
 # *nix only:
