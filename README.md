@@ -70,16 +70,12 @@ It's expected that `stack_exposures` will be built from source, and run from whe
 You can install using `cmake --install .`.  In order for the installed executable to find required libraries at runtime, you'll need to specify the installation directory at configuration time.
 
 ```shell
-mkdir -p build/release
-cd build/release
-
 INSTALL_DIR=/where/to/install
-cmake -DCMAKE_BUILD_TYPE=Release \
-      -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-      -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
-      ../..
-cmake --build .
-cmake --install .
+cmake -Bbuild/release -S. \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}
+cmake --build build/release
+cmake --install build/release
 ${INSTALL_DIR}/bin/stack_exposures --help
 ```
 
@@ -99,10 +95,8 @@ clang-format -i $(fd '.*\.(cpp|hpp)')
 If you have [clang-tidy](https://clang.llvm.org/extra/clang-tidy/) on your PATH:
 
 ```shell
-mkdir -p build/debug
-cd build/debug
-cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ../..
-clang-tidy ../../src/*.cpp ../../tests/src/*.cpp
+cmake -Bbuild/release -S. -DCMAKE_BUILD_TYPE=Release
+clang-tidy --checks="modernize-*,-modernize-use-trailing-return-type" --header-filter='stack_exposures/include/' -p build/release  src/*.cpp tests/src/*.cpp
 ```
 
 
