@@ -83,6 +83,11 @@ struct ImageInfo {
    */
   [[nodiscard]] const cv::Mat &image() const;
 
+  ImageInfo(const ImageInfo &src) = delete;
+  ImageInfo(ImageInfo &&src) = delete;
+  ImageInfo &operator=(const ImageInfo &src) = delete;
+  ImageInfo &operator=(ImageInfo &&src) = delete;
+
 protected:
   /**
    * @brief      Constructs a new instance.
@@ -109,11 +114,6 @@ protected:
    * @param      image  New OpenCV image data
    */
   ImageInfo(const ImageInfo &src, cv::Mat image);
-
-  ImageInfo(const ImageInfo &src) = delete;
-  ImageInfo(ImageInfo &&src) = delete;
-  ImageInfo &operator=(const ImageInfo &src) = delete;
-  ImageInfo &operator=(ImageInfo &&src) = delete;
 
 private:
   const std::filesystem::path m_path;

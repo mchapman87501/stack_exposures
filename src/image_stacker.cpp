@@ -19,7 +19,7 @@ struct StackedImage {
   cv::Mat m_image;
   size_t m_num_used{0}; // number of images used to compute m_image
 
-  StackedImage() {}
+  StackedImage() = default;
 
   StackedImage(const cv::Mat &image, size_t num_used)
       : m_image(stackable(image)), m_num_used(num_used) {}
@@ -27,9 +27,11 @@ struct StackedImage {
   StackedImage(const cv::Mat &single_image)
       : m_image(stackable(single_image)), m_num_used(1) {}
 
-  bool succeeded() const { return (m_num_used > 0) && !m_image.empty(); }
-  bool empty() const { return m_image.empty(); }
-  bool same_extents(const StackedImage &other) const {
+  [[nodiscard]] bool succeeded() const {
+    return (m_num_used > 0) && !m_image.empty();
+  }
+  [[nodiscard]] bool empty() const { return m_image.empty(); }
+  [[nodiscard]] bool same_extents(const StackedImage &other) const {
     return (m_image.rows == other.m_image.rows) &&
            (m_image.cols == other.m_image.cols);
   }
@@ -37,7 +39,7 @@ struct StackedImage {
 
 struct Impl : public ImageStacker {
 
-  Impl() {}
+  Impl() = default;
 
   [[nodiscard]] cv::Mat stacked_result(const ImageInfoFutureContainer &images,
                                        ImageInfo::SharedPtr dark_image,
@@ -50,7 +52,7 @@ struct Impl : public ImageStacker {
       }
       return mean;
     }
-    return cv::Mat(0, 0, image_dtype);
+    return {};
   }
 
 private:
@@ -82,8 +84,8 @@ private:
     return image;
   }
 
-  StackedImage process_all(const ImageInfoFutureContainer &images,
-                           bool align) const {
+  [[nodiscard]] StackedImage process_all(const ImageInfoFutureContainer &images,
+                                         bool align) const {
     const auto count = images.size();
 
     if (count < 3) {
