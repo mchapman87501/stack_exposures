@@ -1,4 +1,5 @@
 #include "str_util.hpp"
+#include <algorithm>
 
 namespace StrUtil {
 
