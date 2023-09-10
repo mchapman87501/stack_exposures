@@ -5,8 +5,7 @@ if(${CMAKE_BUILD_TYPE} STREQUAL "Profile")
     set(CMAKE_CXX_FLAGS_PROFILE "-O0 --coverage")
 endif()
 
-# Create a version of the library that's compiled with coverage flags from
-# CodeCoverage.cmake
+# Create a version of the library that's compiled with coverage flags.
 string(REPLACE "src/" ";../src/" COV_SOURCES ${STACK_EXP_SRC})
 add_library(stack_exp_cov STATIC ${COV_SOURCES})
 target_compile_features(stack_exp_cov PUBLIC cxx_std_20)
